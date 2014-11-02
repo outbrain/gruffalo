@@ -1,3 +1,3 @@
 Gruffalo
 ========
-An asyncronous graphite proxy
+An asynchronous graphite proxy
