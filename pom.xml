@@ -16,9 +16,9 @@
   </licenses>
 
   <scm>
-    <connection>scm:git:ssh://git@github.com:outbrain/sw-infra.git</connection>
-    <developerConnection>scm:git:ssh://git@github.com:outbrain/sw-infra.git</developerConnection>
-    <url>https://github.com/outbrain/sw-infra/</url>
+    <connection>scm:git:ssh://git@github.com:outbrain/gruffalo.git</connection>
+    <developerConnection>scm:git:ssh://git@github.com:outbrain/gruffalo.git</developerConnection>
+    <url>https://github.com/outbrain/gruffalo/</url>
   </scm>
 
   <organization>
