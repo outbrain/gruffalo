@@ -97,13 +97,8 @@
         <configuration>
           <archive>
             <manifestEntries>
-              <svn-revision>${svn.revision}</svn-revision>
               <timestamp>${maven.build.timestamp}</timestamp>
             </manifestEntries>
-            <manifest>
-              <mainClass>${mainClass}</mainClass>
-              <addClasspath>${addClasspath}</addClasspath>
-            </manifest>
           </archive>
         </configuration>
 
