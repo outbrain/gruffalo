@@ -5,7 +5,7 @@
   <groupId>com.outbrain.swinfra</groupId>  
   <packaging>jar</packaging>
   <name>Gruffalo</name>
-  <version>0.16</version>
+  <version>0.17-SNAPSHOT</version>
 
   <licenses>
     <license>
@@ -53,6 +53,8 @@
 
   <build>
     <plugins>
+
+<!--
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>versions-maven-plugin</artifactId>
@@ -65,6 +67,13 @@
         <configuration>
           <tag>${project.artifactId}-${project.version}</tag>
         </configuration>
+      </plugin>
+-->
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-release-plugin</artifactId>
+        <version>2.5.1</version>
       </plugin>
 
       <plugin>
