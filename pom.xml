@@ -46,9 +46,9 @@
   <distributionManagement>
     <!-- Temp Bintray repo -->
     <repository>
-      <id>bintray-harel-eran-Ob1k-com.outbrain.swinfra</id>
-      <name>harel-eran-Ob1k-com.outbrain.swinfra</name>
-      <url>https://api.bintray.com/maven/harel-eran/Ob1k/com.outbrain.swinfra</url>
+      <id>bintray-harel-eran-Gruffalo-com.outbrain.gruffalo</id>
+      <name>harel-eran-Gruffalo-com.outbrain.gruffalo</name>
+      <url>https://api.bintray.com/maven/harel-eran/Gruffalo/com.outbrain.gruffalo</url>
     </repository>
   </distributionManagement>
 
