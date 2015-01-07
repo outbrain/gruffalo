@@ -83,6 +83,11 @@
     </constructor-arg>
   </bean>
 
+  <bean id="nettyQueuesMetricsInitializer" class="com.outbrain.gruffalo.netty.NettyQueuesMetricsInitializer" scope="singleton">
+    <constructor-arg ref="osMetricFactory"/>
+    <constructor-arg ref="eventLoopGroup"/>
+  </bean>
+
   <!-- ============================================ -->
   <!--                graphite client               -->
   <!-- ============================================ -->
