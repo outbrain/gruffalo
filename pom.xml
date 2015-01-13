@@ -44,13 +44,35 @@
   </properties>
 
   <distributionManagement>
-    <!-- Temp Bintray repo -->
+    <repository>
+      <id>nexus-3rdparty</id>
+      <name>3rd party repository</name>
+      <url>http://mavenrepo:8081/nexus/content/repositories/thirdparty</url>
+    </repository>
+
+    <!-- Temp Bintray repo
     <repository>
       <id>bintray-harel-eran-Gruffalo-com.outbrain.gruffalo</id>
       <name>harel-eran-Gruffalo-com.outbrain.gruffalo</name>
       <url>https://api.bintray.com/maven/harel-eran/Gruffalo/com.outbrain.gruffalo</url>
     </repository>
+    -->
   </distributionManagement>
+
+  <repositories>
+    <repository>
+      <id>nexus</id>
+      <name>Local nexus</name>
+      <url>http://nexus:8081/nexus/content/groups/public</url>
+    </repository>
+
+    <repository>
+      <id>jcenter</id>
+      <name>jcenter</name>
+      <url>http://jcenter.bintray.com</url>
+      <snapshots><enabled>false</enabled></snapshots>
+    </repository>
+  </repositories>
 
   <build>
     <plugins>
@@ -152,13 +174,13 @@
     <dependency>
       <groupId>com.outbrain.swinfra</groupId>
       <artifactId>util-metrics</artifactId>
-      <version>0.2</version>
+      <version>0.24</version>
     </dependency>
 
     <dependency>
       <groupId>com.outbrain.swinfra</groupId>
       <artifactId>util-config</artifactId>
-      <version>0.2</version>
+      <version>0.24</version>
     </dependency>
 
     <dependency>
