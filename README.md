@@ -1,4 +1,5 @@
 Gruffalo
 ========
-master branch: [![Build Status](https://travis-ci.org/outbrain/gruffalo.svg?branch=master)](https://travis-ci.org/outbrain/gruffalo)
+[![Build Status](https://travis-ci.org/outbrain/gruffalo.svg?branch=master)](https://travis-ci.org/outbrain/gruffalo)
+
 An asynchronous graphite proxy
