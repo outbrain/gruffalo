@@ -5,7 +5,7 @@
   <groupId>com.outbrain.swinfra</groupId>  
   <packaging>jar</packaging>
   <name>Gruffalo</name>
-  <version>0.20-SNAPSHOT</version>
+  <version>0.20</version>
 
   <licenses>
     <license>
@@ -19,7 +19,7 @@
     <connection>scm:git:https://github.com/outbrain/gruffalo.git</connection>
     <developerConnection>scm:git:https://github.com/outbrain/gruffalo.git</developerConnection>
     <url>https://github.com/outbrain/gruffalo/</url>
-    <tag>HEAD</tag>
+    <tag>Gruffalo-0.20</tag>
   </scm>
 
   <organization>
