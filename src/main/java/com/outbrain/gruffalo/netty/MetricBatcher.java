@@ -32,10 +32,10 @@ class MetricBatcher extends SimpleChannelInboundHandler<String> {
   private final Counter idleChannelsClosed;
   private final ChannelGroup activeChannels;
   private final Histogram metricSize;
+  private final int maxChannelIdleTime;
   private StringBuilder batch;
   private int currBatchSize;
   private DateTime lastRead = DateTime.now();
-  private final int maxChannelIdleTime;
 
   public MetricBatcher(final MetricFactory metricFactory, final int batchBufferCapacity, final ChannelGroup activeChannels, final int maxChannelIdleTime) {
     Preconditions.checkArgument(maxChannelIdleTime > 0, "maxChannelIdleTime must be greater than 0");
@@ -52,12 +52,16 @@ class MetricBatcher extends SimpleChannelInboundHandler<String> {
     ioErrorCounter = metricFactory.createCounter(component, "ioErrors");
     idleChannelsClosed = metricFactory.createCounter(component, "idleChannelsClosed");
     metricSize = metricFactory.createHistogram(component, "metricSize", false);
-    metricFactory.registerGauge(component, "batchSize", new Gauge<Integer>() {
-      @Override
-      public Integer getValue() {
-        return lastBatchSize.get();
-      }
-    });
+    try {
+      metricFactory.registerGauge(component, "batchSize", new Gauge<Integer>() {
+        @Override
+        public Integer getValue() {
+          return lastBatchSize.get();
+        }
+      });
+    } catch (IllegalArgumentException e) {
+      // ignore metric already exists
+    }
   }
 
   @Override
