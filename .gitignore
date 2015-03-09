@@ -3,3 +3,4 @@ release.properties
 *.iml
 *.log
 .idea/
+classpath
