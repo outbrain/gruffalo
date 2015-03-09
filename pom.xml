@@ -61,12 +61,13 @@
   </distributionManagement>
 
   <repositories>
+    <!--
     <repository>
       <id>nexus</id>
       <name>Local nexus</name>
       <url>http://nexus:8081/nexus/content/groups/public</url>
     </repository>
-
+    -->
     <repository>
       <id>jcenter</id>
       <name>jcenter</name>
