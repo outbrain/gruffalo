@@ -176,13 +176,13 @@
     <dependency>
       <groupId>com.outbrain.swinfra</groupId>
       <artifactId>util-metrics</artifactId>
-      <version>0.51</version>
+      <version>0.45</version>
     </dependency>
 
     <dependency>
       <groupId>com.outbrain.swinfra</groupId>
       <artifactId>util-config</artifactId>
-      <version>0.51</version>
+      <version>0.45</version>
     </dependency>
 
     <dependency>
