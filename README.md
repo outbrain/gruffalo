@@ -11,3 +11,6 @@ Gruffalo can easily handle a massive amount of traffic, and thus increase your m
 
 At Outbrain, we currently handle over 1700 concurrent connections, and over 2M metrics per minute per instance.
 
+Reference Docs
+--------------
+*  [About the design] (http://www.slideshare.net/eranharel/reactive-by-example-at-reversim-summit-2015)
