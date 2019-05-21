@@ -9,9 +9,7 @@
   <bean id="gruffaloProxy" class="com.outbrain.gruffalo.netty.GruffaloProxy" destroy-method="shutdown">
     <constructor-arg ref="eventLoopGroup"/>
     <constructor-arg ref="tcpServerPipelineFactory"/>
-    <constructor-arg ref="udpServerPipelineFactory"/>
     <constructor-arg value="${com.outbrain.gruffalo.tcp.port}"/>
-    <constructor-arg value="${com.outbrain.gruffalo.udp.port}"/>
     <constructor-arg ref="throttler"/>
   </bean>
 
@@ -29,14 +27,6 @@
     <constructor-arg value="${com.outbrain.gruffalo.netty.readerIdleTimeSeconds}"/>
     <constructor-arg ref="lineFramerFactory"/>
     <constructor-arg ref="stringDecoder"/>
-    <constructor-arg ref="metricBatcherFactory"/>
-    <constructor-arg ref="publishHandler"/>
-    <constructor-arg ref="publishExecutor"/>
-  </bean>
-  
-  <bean id="udpServerPipelineFactory" class="com.outbrain.gruffalo.netty.UdpServerPipelineFactory">
-    <constructor-arg value="${com.outbrain.gruffalo.netty.readerIdleTimeSeconds}"/>
-    <constructor-arg ref="datagramPacketToStringDecoder"/>
     <constructor-arg ref="metricBatcherFactory"/>
     <constructor-arg ref="publishHandler"/>
     <constructor-arg ref="publishExecutor"/>
@@ -74,8 +64,6 @@
   <bean id="stringEncoder" class="io.netty.handler.codec.string.StringEncoder">
     <constructor-arg ref="metricsCharset"/>
   </bean>
-
-  <bean id="datagramPacketToStringDecoder" class="com.outbrain.gruffalo.netty.DatagramPacketToStringDecoder"/>
 
   <bean id="allServerChannels" class="io.netty.channel.group.DefaultChannelGroup">
     <constructor-arg>
