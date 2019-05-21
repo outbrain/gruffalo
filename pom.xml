@@ -5,7 +5,7 @@
   <groupId>com.outbrain.swinfra</groupId>  
   <packaging>jar</packaging>
   <name>Gruffalo</name>
-  <version>0.23-SNAPSHOT</version>
+  <version>1.0.0-SNAPSHOT</version>
 
   <licenses>
     <license>
@@ -16,16 +16,11 @@
   </licenses>
 
   <scm>
-    <connection>scm:git:https://github.com/outbrain/gruffalo.git</connection>
-    <developerConnection>scm:git:https://github.com/outbrain/gruffalo.git</developerConnection>
-    <url>https://github.com/outbrain/gruffalo/</url>
+    <connection>scm:git:https://github.com/eranahrel/gruffalo.git</connection>
+    <developerConnection>scm:git:https://github.com/eranahrel/gruffalo.git</developerConnection>
+    <url>https://github.com/eranahrel/gruffalo/</url>
     <tag>HEAD</tag>
   </scm>
-
-  <organization>
-    <name>outbrain</name>
-    <url>http://www.outbrain.com</url>
-  </organization>
 
   <developers>
     <developer>
@@ -37,37 +32,16 @@
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <java.compiler.source>1.7</java.compiler.source>
-    <java.compiler.target>1.7</java.compiler.target>
+    <java.compiler.source>1.8</java.compiler.source>
+    <java.compiler.target>1.8</java.compiler.target>
 
     <org.springframework.version>4.0.7.RELEASE</org.springframework.version>
   </properties>
 
   <distributionManagement>
-    <!--
-    <repository>
-      <id>nexus-3rdparty</id>
-      <name>3rd party repository</name>
-      <url>http://mavenrepo:8081/nexus/content/repositories/thirdparty</url>
-    </repository>
-    -->
-    <!-- Temp Bintray repo
-    <repository>
-      <id>bintray-harel-eran-Gruffalo-com.outbrain.gruffalo</id>
-      <name>harel-eran-Gruffalo-com.outbrain.gruffalo</name>
-      <url>https://api.bintray.com/maven/harel-eran/Gruffalo/com.outbrain.gruffalo</url>
-    </repository>
-    -->
   </distributionManagement>
 
   <repositories>
-    <!--
-    <repository>
-      <id>nexus</id>
-      <name>Local nexus</name>
-      <url>http://nexus:8081/nexus/content/groups/public</url>
-    </repository>
-    -->
     <repository>
       <id>jcenter</id>
       <name>jcenter</name>
@@ -79,93 +53,20 @@
   <build>
     <plugins>
 
-<!--
-      <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>versions-maven-plugin</artifactId>
-        <version>2.1</version>
-      </plugin>
-
-      <plugin>
-        <artifactId>maven-scm-plugin</artifactId>
-        <version>1.9.2</version>
-        <configuration>
-          <tag>${project.artifactId}-${project.version}</tag>
-        </configuration>
-      </plugin>
--->
-
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-release-plugin</artifactId>
-        <version>2.5.1</version>
+        <version>2.5.3</version>
       </plugin>
 
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
-        <version>3.1</version>
+        <version>3.8.1</version>
         <configuration>
           <source>${java.compiler.source}</source>
           <target>${java.compiler.target}</target>
         </configuration>
-      </plugin>
-
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-surefire-plugin</artifactId>
-        <version>2.17</version>
-        <configuration>
-          <useFile>false</useFile>
-          <useSystemClassLoader>false</useSystemClassLoader>
-          <forkMode>once</forkMode>
-          <argLine>-Xms512m -Xmx2048m -XX:MaxPermSize=1024m</argLine>
-        </configuration>
-      </plugin>
-
-      <!-- TODO reconfigure for OS projects -->
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-jar-plugin</artifactId>
-        <version>2.4</version>
-        <configuration>
-          <archive>
-            <manifestEntries>
-              <timestamp>${maven.build.timestamp}</timestamp>
-            </manifestEntries>
-          </archive>
-        </configuration>
-
-        <executions>
-          <execution>
-            <id>make-a-jar</id>
-            <phase>compile</phase>
-            <goals>
-              <goal>jar</goal>
-            </goals>
-          </execution>
-          <execution>
-            <id>make-a-test-jar</id>
-            <goals>
-              <goal>test-jar</goal>
-            </goals>
-          </execution>
-        </executions>
-
-      </plugin>
-
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-source-plugin</artifactId>
-        <version>2.3</version>
-        <executions>
-          <execution>
-            <id>attach-sources</id>
-            <goals>
-              <goal>jar</goal>
-            </goals>
-          </execution>
-        </executions>
       </plugin>
 
     </plugins>
@@ -188,12 +89,12 @@
     <dependency>
       <groupId>io.netty</groupId>
       <artifactId>netty-all</artifactId>
-      <version>4.0.23.Final</version>
+      <version>4.1.36.Final</version>
     </dependency>
     <dependency>
       <groupId>joda-time</groupId>
       <artifactId>joda-time</artifactId>
-      <version>2.2</version>
+      <version>2.10.2</version>
     </dependency>
 
     <dependency>
@@ -214,7 +115,7 @@
     <dependency>
       <groupId>org.apache.commons</groupId>
       <artifactId>commons-lang3</artifactId>
-      <version>3.3.2</version>
+      <version>3.9</version>
     </dependency>
     <dependency>
       <groupId>com.codahale.metrics</groupId>
@@ -226,13 +127,11 @@
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-log4j12</artifactId>
       <version>1.7.5</version>
-      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>log4j</groupId>
       <artifactId>log4j</artifactId>
       <version>1.2.17</version>
-      <scope>provided</scope>
     </dependency>
 
     <dependency>
