@@ -8,7 +8,7 @@ import com.outbrain.gruffalo.netty.GraphiteClient;
  *
  * @author Eran Harel
  */
-class GraphiteMetricsPublisher implements MetricsPublisher {
+public class GraphiteMetricsPublisher implements MetricsPublisher {
 
   private final GraphiteClient graphiteClient;
 

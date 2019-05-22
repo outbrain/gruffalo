@@ -1,6 +1,6 @@
 package com.outbrain.gruffalo.netty;
 
-interface MetricBatcherFactory {
+public interface MetricBatcherFactory {
 
   public MetricBatcher getMetricBatcher();
 }

@@ -43,7 +43,7 @@ public class GraphiteChannelInboundHandler extends SimpleChannelInboundHandler<S
 
   @Override
   protected void channelRead0(final ChannelHandlerContext ctx, final String msg) throws Exception {
-    log.warn("Got an unexpected downstream message: " + msg);
+    log.info("Got an unexpected downstream message: " + msg);
   }
 
   @Override

@@ -8,7 +8,7 @@ import java.util.List;
  *
  * @author Eran Harel
  */
-class CompoundMetricsPublisher implements MetricsPublisher {
+public class CompoundMetricsPublisher implements MetricsPublisher {
 
   private final List<MetricsPublisher> publishers = new LinkedList<MetricsPublisher>();
 

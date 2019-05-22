@@ -9,7 +9,7 @@ import com.outbrain.swinfra.metrics.api.Timer;
  *
  * @author Eran Harel
  */
-class TimedMetricsPublisher implements MetricsPublisher {
+public class TimedMetricsPublisher implements MetricsPublisher {
 
   private final MetricsPublisher timedDelegate;
   private final Timer timer;
@@ -21,6 +21,7 @@ class TimedMetricsPublisher implements MetricsPublisher {
 
   @Override
   public void publishMetrics(final String payload) {
+    // TODO this doesn't look right... Timing should be moved to NettyGraphiteClient.publishMetrics, and close timer in the listener
     final Timer.Context timerContext = timer.time();
     try {
       timedDelegate.publishMetrics(payload);

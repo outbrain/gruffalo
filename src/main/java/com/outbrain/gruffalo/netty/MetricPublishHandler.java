@@ -12,7 +12,7 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 
 @Sharable
-class MetricPublishHandler extends SimpleChannelInboundHandler<Batch> {
+public class MetricPublishHandler extends SimpleChannelInboundHandler<Batch> {
 
   private final MetricsPublisher publisher;
   private final Timer publishTimer;
@@ -28,7 +28,8 @@ class MetricPublishHandler extends SimpleChannelInboundHandler<Batch> {
   }
 
   @Override
-  public void channelRead0(final ChannelHandlerContext ctx, final Batch msg) throws Exception {
+  public void channelRead0(final ChannelHandlerContext ctx, final Batch msg) {
+    // TODO this doesn't look right... Timing should be moved to NettyGraphiteClient.publishMetrics, and close timer in the listener
     Timer.Context timerContext = publishTimer.time();
     try {
       publisher.publishMetrics(msg.payload.toString());

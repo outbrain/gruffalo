@@ -4,11 +4,9 @@ import com.outbrain.gruffalo.netty.GraphiteChannelInboundHandler;
 import com.outbrain.gruffalo.netty.GraphiteClientChannelInitializer;
 import com.outbrain.gruffalo.netty.NettyGraphiteClient;
 import com.outbrain.gruffalo.netty.Throttler;
-import com.outbrain.swinfra.metrics.api.MetricFactory;
 import com.outbrain.swinfra.metrics.api.Counter;
+import com.outbrain.swinfra.metrics.api.MetricFactory;
 import io.netty.channel.nio.NioEventLoopGroup;
-import io.netty.handler.codec.string.StringDecoder;
-import io.netty.handler.codec.string.StringEncoder;
 import org.apache.commons.lang3.time.StopWatch;
 import org.mockito.Mockito;
 
@@ -32,7 +30,7 @@ public class GraphiteMetricsPublisherTest {
     NettyGraphiteClient client = new NettyGraphiteClient(throttler, 1000, metricFactoryMock, "localhost:666");
     String host = "localhost";
     int port = 3003;
-    GraphiteClientChannelInitializer channelInitializer = new GraphiteClientChannelInitializer(host, port, eventLoopGroup, new StringDecoder(), new StringEncoder(), new GraphiteChannelInboundHandler(client, host + ":" + port, throttler));
+    GraphiteClientChannelInitializer channelInitializer = new GraphiteClientChannelInitializer(host, port, eventLoopGroup, new GraphiteChannelInboundHandler(client, host + ":" + port, throttler));
     client.setChannelInitializer(channelInitializer);
     client.connect();
 

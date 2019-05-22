@@ -15,6 +15,7 @@ import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.string.StringDecoder;
 import io.netty.handler.codec.string.StringEncoder;
 import io.netty.handler.timeout.IdleStateHandler;
+import io.netty.util.CharsetUtil;
 
 /**
 * Time: 8/4/13 10:06 AM
@@ -23,19 +24,20 @@ import io.netty.handler.timeout.IdleStateHandler;
 */
 public class GraphiteClientChannelInitializer extends ChannelInitializer<Channel> {
 
+  private static final StringDecoder decoder = new StringDecoder(CharsetUtil.UTF_8);
+  private static final StringEncoder encoder = new StringEncoder(CharsetUtil.UTF_8);
+
   private final String graphiteHost;
   private final int graphitePort;
   private final EventLoopGroup eventLoopGroup;
-  private final StringDecoder decoder;
-  private final StringEncoder encoder;
   private ChannelHandler graphiteHandler;
 
-  public GraphiteClientChannelInitializer(final String graphiteHost, final int graphitePort, final EventLoopGroup eventLoopGroup,
-      final StringDecoder decoder, final StringEncoder encoder, final ChannelHandler graphiteHandler) {
+  public GraphiteClientChannelInitializer(final String graphiteHost,
+                                          final int graphitePort,
+                                          final EventLoopGroup eventLoopGroup,
+                                          final ChannelHandler graphiteHandler) {
     this.graphiteHost = graphiteHost;
     this.graphitePort = graphitePort;
-    this.decoder = Preconditions.checkNotNull(decoder, "decoder must not be null");
-    this.encoder = Preconditions.checkNotNull(encoder, "encoder must not be null");
     this.graphiteHandler = Preconditions.checkNotNull(graphiteHandler, "graphiteHandler must not be null");
     this.eventLoopGroup = Preconditions.checkNotNull(eventLoopGroup, "eventLoopGroup must not be null");
   }

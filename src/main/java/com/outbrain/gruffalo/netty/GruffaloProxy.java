@@ -10,9 +10,8 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.context.support.ClassPathXmlApplicationContext;
 
-class GruffaloProxy {
+public class GruffaloProxy {
 
   private static final Logger log = LoggerFactory.getLogger(GruffaloProxy.class);
   private final ChannelFuture tcpChannelFuture;
@@ -27,10 +26,6 @@ class GruffaloProxy {
     this.eventLoopGroup = Preconditions.checkNotNull(eventLoopGroup, "eventLoopGroup must not be null");
     tcpChannelFuture = createTcpBootstrap(tcpServerPipelineFactory, tcpPort);
     log.info("Initialization completed");
-  }
-
-  public static void main(final String[] args) {
-    new ClassPathXmlApplicationContext("classpath:applicationContext-GruffaloLib-all.xml");
   }
 
   private ChannelFuture createTcpBootstrap(final TcpServerPipelineFactory tcpServerPipelineFactory, final int tcpPort) {

@@ -20,7 +20,7 @@ import io.netty.channel.group.ChannelGroup;
 import io.netty.handler.timeout.IdleState;
 import io.netty.handler.timeout.IdleStateEvent;
 
-class MetricBatcher extends SimpleChannelInboundHandler<String> {
+public class MetricBatcher extends SimpleChannelInboundHandler<String> {
 
   private static final Logger log = LoggerFactory.getLogger(MetricBatcher.class);
   private static final AtomicInteger lastBatchSize = new AtomicInteger(0);

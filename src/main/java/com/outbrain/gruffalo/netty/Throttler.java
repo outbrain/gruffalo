@@ -33,15 +33,15 @@ public class Throttler {
     });
   }
 
-  public void pushBackClients() {
+  void pushBackClients() {
     changeServerAutoRead(false);
   }
 
-  public void restoreClientReads() {
+  void restoreClientReads() {
     changeServerAutoRead(true);
   }
 
-  public void changeServerAutoRead(final boolean autoread) {
+  void changeServerAutoRead(final boolean autoread) {
     log.debug("Setting server autoread={}", autoread);
 
     serverChannel.config().setAutoRead(autoread);

@@ -1,16 +1,13 @@
 package com.outbrain.gruffalo.netty;
 
 import com.google.common.base.Preconditions;
-import com.outbrain.swinfra.metrics.api.Gauge;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.outbrain.gruffalo.util.HostName2MetricName;
-import com.outbrain.swinfra.metrics.api.MetricFactory;
 import com.outbrain.swinfra.metrics.api.Counter;
-
+import com.outbrain.swinfra.metrics.api.MetricFactory;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -33,24 +30,7 @@ public class NettyGraphiteClient implements GraphiteClient {
   private final Counter rejectedCounter;
   private final Counter publishedCounter;
   private final String host;
-  private final ChannelFutureListener opListener = new ChannelFutureListener() {
-    @Override
-    public void operationComplete(final ChannelFuture future) throws Exception {
-      final int inFlightBaches = inFlightBatches.decrementAndGet();
-      if(inFlightBaches == inFlightBatchesLowThreshold) {
-        throttler.restoreClientReads();
-      }
-
-      if (future.isSuccess()) {
-        publishedCounter.inc();
-      } else {
-        errorCounter.inc();
-        if (log.isDebugEnabled()) {
-          log.debug("Failed to write to {}: {}", host, future.cause().toString());
-        }
-      }
-    }
-  };
+  private final ChannelFutureListener opListener = this::onMetricsWriteComplete;
   private GraphiteClientChannelInitializer channelInitializer;
   private volatile ChannelFuture channelFuture;
 
@@ -67,12 +47,7 @@ public class NettyGraphiteClient implements GraphiteClient {
     reconnectCounter = metricFactory.createCounter(getClass().getSimpleName(), graphiteCompatibleHostName + ".reconnect");
     rejectedCounter = metricFactory.createCounter(getClass().getSimpleName(), graphiteCompatibleHostName + ".rejected");
     publishedCounter = metricFactory.createCounter(getClass().getSimpleName(), graphiteCompatibleHostName + ".published");
-    metricFactory.registerGauge(getClass().getSimpleName(), graphiteCompatibleHostName + ".inFlightBatches", new Gauge<Integer>() {
-      @Override
-      public Integer getValue() {
-        return inFlightBatches.get();
-      }
-    });
+    metricFactory.registerGauge(getClass().getSimpleName(), graphiteCompatibleHostName + ".inFlightBatches", inFlightBatches::get);
     log.info("Client for [{}] initialized", host);
   }
 
@@ -108,4 +83,19 @@ public class NettyGraphiteClient implements GraphiteClient {
     pushBackCounter.inc();
   }
 
+  private void onMetricsWriteComplete(final ChannelFuture future) {
+    final int inFlightBaches = inFlightBatches.decrementAndGet();
+    if(inFlightBaches == inFlightBatchesLowThreshold) {
+      throttler.restoreClientReads();
+    }
+
+    if (future.isSuccess()) {
+      publishedCounter.inc();
+    } else {
+      errorCounter.inc();
+      if (log.isDebugEnabled()) {
+        log.debug("Failed to write to {}: {}", host, future.cause().toString());
+      }
+    }
+  }
 }

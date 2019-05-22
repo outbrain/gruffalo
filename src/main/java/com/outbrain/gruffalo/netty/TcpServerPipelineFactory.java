@@ -5,30 +5,33 @@ import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
 import io.netty.handler.codec.string.StringDecoder;
 import io.netty.handler.timeout.IdleStateHandler;
+import io.netty.util.CharsetUtil;
 import io.netty.util.concurrent.EventExecutorGroup;
 
 import org.springframework.util.Assert;
 
-class TcpServerPipelineFactory extends ChannelInitializer<Channel> {
+public class TcpServerPipelineFactory extends ChannelInitializer<Channel> {
+
+  private static final StringDecoder decoder = new StringDecoder(CharsetUtil.UTF_8);
 
   private final int readerIdleTimeSeconds;
   private final LineBasedFrameDecoderFactory framerFactory;
-  private final StringDecoder decoder;
   private final MetricBatcherFactory metricBatcherFactory;
   private final MetricPublishHandler publishHandler;
   private final EventExecutorGroup publishExecutor;
 
-  public TcpServerPipelineFactory(final int readerIdleTimeSeconds, final LineBasedFrameDecoderFactory framerFactory, final StringDecoder decoder,
-      final MetricBatcherFactory metricBatcherFactory, final MetricPublishHandler publishHandler, final EventExecutorGroup publishExecutor) {
+  public TcpServerPipelineFactory(final int readerIdleTimeSeconds,
+                                  final LineBasedFrameDecoderFactory framerFactory,
+                                  final MetricBatcherFactory metricBatcherFactory,
+                                  final MetricPublishHandler publishHandler,
+                                  final EventExecutorGroup publishExecutor) {
     Assert.notNull(framerFactory, "framerFactory,  may not be null");
-    Assert.notNull(decoder, "decoder may not be null");
     Assert.notNull(metricBatcherFactory, "metricBatcherFactory may not be null");
     Assert.notNull(publishHandler, "publishHandler may not be null");
     Assert.notNull(publishExecutor, "publishExecutor may not be null");
 
     this.readerIdleTimeSeconds = readerIdleTimeSeconds;
     this.framerFactory = framerFactory;
-    this.decoder = decoder;
     this.metricBatcherFactory = metricBatcherFactory;
     this.publishHandler = publishHandler;
     this.publishExecutor = publishExecutor;

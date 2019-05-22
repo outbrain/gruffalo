@@ -18,27 +18,31 @@ import io.netty.handler.codec.string.StringEncoder;
  *
  * @author Eran Harel
  */
-class GraphiteClientPool implements GraphiteClient {
+public class GraphiteClientPool implements GraphiteClient {
 
   private static final Logger logger = LoggerFactory.getLogger(GraphiteClientPool.class);
   private final GraphiteClient[] pool;
   private final AtomicInteger nextIndex = new AtomicInteger();
 
-  public GraphiteClientPool(final EventLoopGroup eventLoopGroup, final StringDecoder decoder,
-                            final StringEncoder encoder, final Throttler throttler, final int inFlightBatchesHighThreshold, final MetricFactory metricFactory, final String graphiteRelayHosts) {
+  public GraphiteClientPool(final EventLoopGroup eventLoopGroup,
+                            final Throttler throttler,
+                            final int inFlightBatchesHighThreshold,
+                            final MetricFactory metricFactory,
+                            final String graphiteRelayHosts) {
     Preconditions.checkNotNull(graphiteRelayHosts);
-    Preconditions.checkNotNull(decoder, "decoder must not be null");
-    Preconditions.checkNotNull(encoder, "encoder must not be null");
     Preconditions.checkNotNull(eventLoopGroup, "eventLoopGroup must not be null");
 
     logger.info("Creating a client pool for [{}]", graphiteRelayHosts);
     final String[] hosts = graphiteRelayHosts.trim().split(",");
     pool = new GraphiteClient[hosts.length];
-    initClients(hosts, eventLoopGroup, decoder, encoder, throttler, inFlightBatchesHighThreshold, metricFactory);
+    initClients(hosts, eventLoopGroup, throttler, inFlightBatchesHighThreshold, metricFactory);
   }
 
-  private void initClients(final String[] hosts, final EventLoopGroup eventLoopGroup, final StringDecoder decoder, final StringEncoder encoder,
-                           final Throttler throttler, final int inFlightBatchesHighThreshold, final MetricFactory metricFactory) {
+  private void initClients(final String[] hosts,
+                           final EventLoopGroup eventLoopGroup,
+                           final Throttler throttler,
+                           final int inFlightBatchesHighThreshold,
+                           final MetricFactory metricFactory) {
     for (int i = 0; i < hosts.length; i++) {
       final String[] hostAndPort = hosts[i].split(":");
       final String host = hostAndPort[0];
@@ -47,8 +51,7 @@ class GraphiteClientPool implements GraphiteClient {
       final NettyGraphiteClient client = new NettyGraphiteClient(throttler, inFlightBatchesHighThreshold, metricFactory, hosts[i]);
       pool[i] = client;
       final ChannelHandler graphiteChannelHandler = new GraphiteChannelInboundHandler(client, hosts[i], throttler);
-      final GraphiteClientChannelInitializer channelInitializer = new GraphiteClientChannelInitializer(host, port, eventLoopGroup, decoder, encoder,
-          graphiteChannelHandler);
+      final GraphiteClientChannelInitializer channelInitializer = new GraphiteClientChannelInitializer(host, port, eventLoopGroup, graphiteChannelHandler);
       client.setChannelInitializer(channelInitializer);
     }
   }

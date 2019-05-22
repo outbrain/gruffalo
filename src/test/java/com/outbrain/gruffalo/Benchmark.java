@@ -13,13 +13,8 @@ import org.joda.time.DateTime;
 
 public class Benchmark {
 
-  /**
-   * @param args
-   * @throws IOException 
-   * @throws InterruptedException 
-   */
-  public static void main(final String[] args) throws IOException, InterruptedException {
-    final int nThreads = 8;
+  public static void main(final String[] args) throws InterruptedException {
+    final int nThreads = 4;
     final ExecutorService executor = Executors.newFixedThreadPool(nThreads);
 
     for (int i = 0; i < nThreads; i++) {
