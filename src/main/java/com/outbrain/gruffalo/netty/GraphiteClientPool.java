@@ -1,17 +1,13 @@
 package com.outbrain.gruffalo.netty;
 
-import java.util.concurrent.atomic.AtomicInteger;
-
+import com.outbrain.gruffalo.util.Preconditions;
+import com.outbrain.swinfra.metrics.api.MetricFactory;
+import io.netty.channel.ChannelHandler;
+import io.netty.channel.EventLoopGroup;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.base.Preconditions;
-import com.outbrain.swinfra.metrics.api.MetricFactory;
-
-import io.netty.channel.ChannelHandler;
-import io.netty.channel.EventLoopGroup;
-import io.netty.handler.codec.string.StringDecoder;
-import io.netty.handler.codec.string.StringEncoder;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Time: 8/4/13 2:20 PM
@@ -29,7 +25,7 @@ public class GraphiteClientPool implements GraphiteClient {
                             final int inFlightBatchesHighThreshold,
                             final MetricFactory metricFactory,
                             final String graphiteRelayHosts) {
-    Preconditions.checkNotNull(graphiteRelayHosts);
+    Preconditions.checkNotNull(graphiteRelayHosts, "graphiteRelayHosts must not be null");
     Preconditions.checkNotNull(eventLoopGroup, "eventLoopGroup must not be null");
 
     logger.info("Creating a client pool for [{}]", graphiteRelayHosts);

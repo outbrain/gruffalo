@@ -1,7 +1,8 @@
 package com.outbrain.gruffalo.publish;
 
-import com.google.common.base.Preconditions;
+
 import com.outbrain.gruffalo.netty.GraphiteClient;
+import com.outbrain.gruffalo.util.Preconditions;
 
 /**
  * Time: 7/28/13 3:16 PM

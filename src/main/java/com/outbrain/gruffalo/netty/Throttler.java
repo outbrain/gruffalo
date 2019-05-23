@@ -1,14 +1,12 @@
 package com.outbrain.gruffalo.netty;
 
-import com.google.common.base.Preconditions;
-import com.outbrain.swinfra.metrics.api.Gauge;
+
+import com.outbrain.gruffalo.util.Preconditions;
 import com.outbrain.swinfra.metrics.api.MetricFactory;
 import io.netty.channel.Channel;
 import io.netty.channel.group.ChannelGroup;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * This little fella is in charge of pushing back / restoring inbound traffic when needed
@@ -25,12 +23,8 @@ public class Throttler {
   public Throttler(final ChannelGroup activeServerChannels, MetricFactory metricFactory) {
     this.activeServerChannels = Preconditions.checkNotNull(activeServerChannels, "activeServerChannels must not be null");
     Preconditions.checkNotNull(metricFactory, "metricFactory must not be null");
-    metricFactory.registerGauge(getClass().getSimpleName(), "autoread", new Gauge<Integer>() {
-      @Override
-      public Integer getValue() {
-        return serverChannel == null || !serverChannel.config().isAutoRead() ? 0 : 1;
-      }
-    });
+    metricFactory.registerGauge(getClass().getSimpleName(), "autoread",
+        () -> serverChannel == null || !serverChannel.config().isAutoRead() ? 0 : 1);
   }
 
   void pushBackClients() {

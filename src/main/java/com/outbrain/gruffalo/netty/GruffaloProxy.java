@@ -1,6 +1,7 @@
 package com.outbrain.gruffalo.netty;
 
-import com.google.common.base.Preconditions;
+
+import com.outbrain.gruffalo.util.Preconditions;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.UnpooledByteBufAllocator;
 import io.netty.channel.ChannelFuture;

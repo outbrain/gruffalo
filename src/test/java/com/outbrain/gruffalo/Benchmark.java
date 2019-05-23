@@ -1,15 +1,15 @@
 package com.outbrain.gruffalo;
 
+import org.apache.commons.lang3.time.StopWatch;
+
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.net.Socket;
+import java.time.Instant;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-
-import org.apache.commons.lang3.time.StopWatch;
-import org.joda.time.DateTime;
 
 public class Benchmark {
 
@@ -39,7 +39,7 @@ public class Benchmark {
       try {
         for (int i = 0; i < 20000000; i++) {
           final StringBuilder payload = new StringBuilder(40);
-          payload.append(i).append(" - ").append(new DateTime()).append('\n');
+          payload.append(i).append(" - ").append(Instant.now()).append('\n');
           try {
             writer.write(payload.toString());
             if (i % 10000 == 0) {

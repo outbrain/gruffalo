@@ -1,7 +1,8 @@
 package com.outbrain.gruffalo.netty;
 
-import com.google.common.base.Preconditions;
 
+
+import com.outbrain.gruffalo.util.Preconditions;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.UnpooledByteBufAllocator;
 import io.netty.channel.Channel;
@@ -42,7 +43,7 @@ public class GraphiteClientChannelInitializer extends ChannelInitializer<Channel
     this.eventLoopGroup = Preconditions.checkNotNull(eventLoopGroup, "eventLoopGroup must not be null");
   }
 
-  public ChannelFuture connect() {
+  ChannelFuture connect() {
     return configureBootstrap().connect();
   }
 
@@ -59,7 +60,7 @@ public class GraphiteClientChannelInitializer extends ChannelInitializer<Channel
   }
 
   @Override
-  protected void initChannel(Channel channel) throws Exception {
+  protected void initChannel(Channel channel) {
     ChannelPipeline pipeline = channel.pipeline();
 
     pipeline.addLast(new IdleStateHandler(0, 10, 0));

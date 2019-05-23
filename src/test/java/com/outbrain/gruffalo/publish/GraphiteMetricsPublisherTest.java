@@ -1,14 +1,16 @@
 package com.outbrain.gruffalo.publish;
 
+import com.codahale.metrics.MetricRegistry;
 import com.outbrain.gruffalo.netty.GraphiteChannelInboundHandler;
 import com.outbrain.gruffalo.netty.GraphiteClientChannelInitializer;
 import com.outbrain.gruffalo.netty.NettyGraphiteClient;
 import com.outbrain.gruffalo.netty.Throttler;
-import com.outbrain.swinfra.metrics.api.Counter;
 import com.outbrain.swinfra.metrics.api.MetricFactory;
+import com.outbrain.swinfra.metrics.codahale3.CodahaleMetricsFactory;
+import io.netty.channel.group.DefaultChannelGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.util.concurrent.GlobalEventExecutor;
 import org.apache.commons.lang3.time.StopWatch;
-import org.mockito.Mockito;
 
 import java.util.concurrent.TimeUnit;
 
@@ -21,13 +23,11 @@ public class GraphiteMetricsPublisherTest {
 
   public static void main(String[] args) throws InterruptedException {
 
-    final MetricFactory metricFactoryMock = Mockito.mock(MetricFactory.class);
-    final Counter counterMock = Mockito.mock(Counter.class);
-    Mockito.when(metricFactoryMock.createCounter(Mockito.anyString(), Mockito.anyString())).thenReturn(counterMock);
+    final MetricFactory metricFactory = new CodahaleMetricsFactory(new MetricRegistry());
 
     NioEventLoopGroup eventLoopGroup = new NioEventLoopGroup(2);
-    final Throttler throttler = Mockito.mock(Throttler.class);
-    NettyGraphiteClient client = new NettyGraphiteClient(throttler, 1000, metricFactoryMock, "localhost:666");
+    final Throttler throttler = new Throttler(new DefaultChannelGroup(GlobalEventExecutor.INSTANCE), metricFactory);
+    NettyGraphiteClient client = new NettyGraphiteClient(throttler, 1000, metricFactory, "localhost:666");
     String host = "localhost";
     int port = 3003;
     GraphiteClientChannelInitializer channelInitializer = new GraphiteClientChannelInitializer(host, port, eventLoopGroup, new GraphiteChannelInboundHandler(client, host + ":" + port, throttler));

@@ -1,7 +1,8 @@
 package com.outbrain.gruffalo.netty;
 
-import com.google.common.base.Preconditions;
+
 import com.outbrain.gruffalo.util.HostName2MetricName;
+import com.outbrain.gruffalo.util.Preconditions;
 import com.outbrain.swinfra.metrics.api.Counter;
 import com.outbrain.swinfra.metrics.api.MetricFactory;
 import io.netty.channel.ChannelFuture;
@@ -35,7 +36,7 @@ public class NettyGraphiteClient implements GraphiteClient {
   private volatile ChannelFuture channelFuture;
 
   public NettyGraphiteClient(final Throttler throttler, final int inFlightBatchesHighThreshold, final MetricFactory metricFactory, final String host) {
-    Preconditions.checkArgument(0 < inFlightBatchesHighThreshold);
+    Preconditions.checkArgument(0 < inFlightBatchesHighThreshold, "inFlightBatchesHighThreshold must be greater than 0");
     this.inFlightBatchesHighThreshold = inFlightBatchesHighThreshold;
     this.inFlightBatchesLowThreshold = inFlightBatchesHighThreshold / 5;
     Preconditions.checkNotNull(metricFactory, "metricFactory must not be null");

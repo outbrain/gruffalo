@@ -1,6 +1,7 @@
 package com.outbrain.gruffalo;
 
 import com.codahale.metrics.MetricRegistry;
+import com.outbrain.gruffalo.config.Config;
 import com.outbrain.gruffalo.netty.*;
 import com.outbrain.gruffalo.publish.CompoundMetricsPublisher;
 import com.outbrain.gruffalo.publish.GraphiteMetricsPublisher;
@@ -13,10 +14,11 @@ import io.netty.channel.group.DefaultChannelGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.handler.codec.LineBasedFrameDecoder;
 import io.netty.util.concurrent.GlobalEventExecutor;
+import org.apache.commons.cli.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -27,25 +29,32 @@ import java.util.List;
 public class StandaloneGruffaloServer {
   private static final Logger logger = LoggerFactory.getLogger(StandaloneGruffaloServer.class);
 
+  private final Config config;
   private final MetricFactory metricFactory = new CodahaleMetricsFactory(new MetricRegistry());
   private final DefaultChannelGroup activeServerChannels = new DefaultChannelGroup(GlobalEventExecutor.INSTANCE);
   private final Throttler throttler = new Throttler(activeServerChannels, metricFactory);
   private final EventLoopGroup eventLoopGroup = createEventLoopGroup();
 
+  private StandaloneGruffaloServer(final Config config) {
+    this.config = config;
+    MetricsPublisher metricsPublisher = createMetricsPublisher(eventLoopGroup, throttler, metricFactory, config.graphiteClusters);
+    TcpServerPipelineFactory tcpServerPipelineFactory = createTcpServerPipelineFactory(metricsPublisher);
+
+    GruffaloProxy proxy = createProxy(config.port, tcpServerPipelineFactory);
+  }
+
   public static void main(final String[] args) {
-    new StandaloneGruffaloServer().start();
+    Config config = Config.parseCommand(StandaloneGruffaloServer.class.getName(), args);
+    if (config == null) {
+      return;
+    }
+
+    new StandaloneGruffaloServer(config);
     logger.info("******** Gruffalo started ********");
   }
 
-  private void start() {
-    GruffaloProxy proxy = createProxy();
-  }
-
-  private GruffaloProxy createProxy() {
-    String graphiteRelayHosts = "localhost:2003,localhost:2004"; // TODO introduce proper config
-    MetricsPublisher metricsPublisher = createMetricsPublisher(eventLoopGroup, throttler, metricFactory, graphiteRelayHosts);
-    TcpServerPipelineFactory tcpServerPipelineFactory = createTcpServerPipelineFactory(metricsPublisher);
-    GruffaloProxy proxy = new GruffaloProxy(eventLoopGroup, tcpServerPipelineFactory, 3003/*TODO com.outbrain.gruffalo.tcp.port*/, throttler);
+  private GruffaloProxy createProxy(final int tcpPort, final TcpServerPipelineFactory tcpServerPipelineFactory) {
+    GruffaloProxy proxy = new GruffaloProxy(eventLoopGroup, tcpServerPipelineFactory, tcpPort, throttler);
     Runtime.getRuntime().addShutdownHook(new Thread(() -> {
       try {
         proxy.shutdown();
@@ -58,73 +67,29 @@ public class StandaloneGruffaloServer {
   }
 
   private TcpServerPipelineFactory createTcpServerPipelineFactory(final MetricsPublisher metricsPublisher) {
-    final LineBasedFrameDecoderFactory lineBasedFrameDecoderFactory = () -> new LineBasedFrameDecoder(4096/*TODO com.outbrain.gruffalo.netty.maxMetricLength*/, false, true);
-    final MetricBatcherFactory metricBatcherFactory = () -> new MetricBatcher(metricFactory, 8192/*TODO com.outbrain.gruffalo.netty.MetricBatcher.batchBufferCapacity*/, activeServerChannels, 120/*TODO com.outbrain.gruffalo.maxChannelIdleTimeSec*/);
-    return new TcpServerPipelineFactory(10 /*TODO com.outbrain.gruffalo.netty.readerIdleTimeSeconds*/,
+    final LineBasedFrameDecoderFactory lineBasedFrameDecoderFactory = () -> new LineBasedFrameDecoder(config.maxMetricLength, false, true);
+    final MetricBatcherFactory metricBatcherFactory = () -> new MetricBatcher(metricFactory, config.maxBatchSize, activeServerChannels, config.reconnectOnIdleTime);
+    return new TcpServerPipelineFactory(config.flushOnIdleTime,
         lineBasedFrameDecoderFactory,
         metricBatcherFactory,
-        new MetricPublishHandler(metricsPublisher, metricFactory),
-        eventLoopGroup);
+        new MetricPublishHandler(metricsPublisher, metricFactory));
   }
 
-  private MetricsPublisher createMetricsPublisher(final EventLoopGroup eventLoopGroup, final Throttler throttler, final MetricFactory metricFactory, final String graphiteRelayHosts) {
-    GraphiteClientPool graphiteClient = new GraphiteClientPool(eventLoopGroup, throttler, 1500/*TODO com.outbrain.gruffalo.inFlightBatchesHighThreshold*/, metricFactory, graphiteRelayHosts);
-    graphiteClient.connect();
-    final MetricsPublisher clutserPublisher = new GraphiteMetricsPublisher(graphiteClient);
-    final List<MetricsPublisher> publishers = Collections.singletonList(new TimedMetricsPublisher(clutserPublisher, metricFactory, "mainGraphiteClient"/*TODO add name*/));
+  private MetricsPublisher createMetricsPublisher(final EventLoopGroup eventLoopGroup, final Throttler throttler, final MetricFactory metricFactory, final String[] clusters) {
+    final List<MetricsPublisher> publishers = new ArrayList<>(clusters.length);
+    for (int i = 0; i < clusters.length; i++) {
+      GraphiteClientPool graphiteClient = new GraphiteClientPool(eventLoopGroup, throttler, config.maxInflightBatches, metricFactory, clusters[i]);
+      graphiteClient.connect();
+
+      final MetricsPublisher clutserPublisher = new GraphiteMetricsPublisher(graphiteClient);
+      publishers.add(new TimedMetricsPublisher(clutserPublisher, metricFactory, "graphiteCluster-" + i));
+    }
+
     return new CompoundMetricsPublisher(publishers);
   }
 
   private EventLoopGroup createEventLoopGroup() {
     return new NioEventLoopGroup();
   }
-
-//    <bean id="gruffaloProxy" class="com.outbrain.gruffalo.netty.GruffaloProxy" destroy-method="shutdown">
-//    <constructor-arg ref="eventLoopGroup"/>
-//    <constructor-arg ref="tcpServerPipelineFactory"/>
-//    <constructor-arg value="${com.outbrain.gruffalo.tcp.port}"/>
-//    <constructor-arg ref="throttler"/>
-//  </bean>
-//
-//  <bean id="tcpServerPipelineFactory" class="com.outbrain.gruffalo.netty.TcpServerPipelineFactory">
-//    <constructor-arg value="${com.outbrain.gruffalo.netty.readerIdleTimeSeconds}"/>
-//    <constructor-arg ref="lineFramerFactory"/>
-//    <constructor-arg ref="stringDecoder"/>
-//    <constructor-arg ref="metricBatcherFactory"/>
-//    <constructor-arg ref="publishHandler"/>
-//    <constructor-arg ref="publishExecutor"/>
-//  </bean>
-
-//  <bean id="publishHandler" class="com.outbrain.gruffalo.netty.MetricPublishHandler">
-//    <constructor-arg ref="metricsPublisher"/>
-//    <constructor-arg ref="osMetricFactory"/>
-//  </bean>
-//
-//
-//  <bean id="nettyQueuesMetricsInitializer" class="com.outbrain.gruffalo.netty.NettyQueuesMetricsInitializer" scope="singleton">
-//    <constructor-arg ref="osMetricFactory"/>
-//    <constructor-arg ref="eventLoopGroup"/>
-//  </bean>
-//
-//  <!-- ============================================ -->
-//  <!--                graphite client               -->
-//  <!-- ============================================ -->
-//
-//  <bean id="graphiteClientTemplate" class="com.outbrain.gruffalo.netty.GraphiteClientPool" init-method="connect" abstract="true">
-//    <constructor-arg ref="eventLoopGroup"/>
-//    <constructor-arg ref="stringDecoder"/>
-//    <constructor-arg ref="stringEncoder"/>
-//    <constructor-arg ref="throttler"/>
-//    <constructor-arg value="${com.outbrain.gruffalo.inFlightBatchesHighThreshold}"/>
-//    <constructor-arg ref="osMetricFactory"/>
-//  </bean>
-//
-//  <bean id="mainGraphiteClient" parent="graphiteClientTemplate">
-//    <constructor-arg value="${com.outbrain.metrics.graphite.relay.hosts}"/>
-//  </bean>
-//
-//  <bean id="secondaryGraphiteClient" parent="graphiteClientTemplate" lazy-init="true">
-//    <constructor-arg value="${com.outbrain.metrics.graphite.relay.secondary.hosts}"/>
-//  </bean>
 
 }

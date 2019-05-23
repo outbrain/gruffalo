@@ -1,20 +1,13 @@
 package com.outbrain.gruffalo.netty;
 
-import java.util.concurrent.TimeUnit;
-
+import com.outbrain.gruffalo.util.Preconditions;
+import io.netty.channel.*;
+import io.netty.handler.timeout.IdleState;
+import io.netty.handler.timeout.IdleStateEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.base.Preconditions;
-
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelFutureListener;
-import io.netty.channel.ChannelHandler;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.EventLoop;
-import io.netty.channel.SimpleChannelInboundHandler;
-import io.netty.handler.timeout.IdleState;
-import io.netty.handler.timeout.IdleStateEvent;
+import java.util.concurrent.TimeUnit;
 
 @ChannelHandler.Sharable
 public class GraphiteChannelInboundHandler extends SimpleChannelInboundHandler<String> {
@@ -28,48 +21,41 @@ public class GraphiteChannelInboundHandler extends SimpleChannelInboundHandler<S
   private final Throttler throttler;
   private boolean serverReadEnabled = true;
 
-  private final ChannelFutureListener restoreServerReads = new ChannelFutureListener() {
-    @Override
-    public void operationComplete(final ChannelFuture future) throws Exception {
-      throttler.restoreClientReads();
-    }
-  };
+  private final ChannelFutureListener restoreServerReads;
 
   public GraphiteChannelInboundHandler(final GraphiteClient client, final String graphiteTarget, final Throttler throttler) {
     this.client = Preconditions.checkNotNull(client, "client may not be null");
     this.graphiteTarget = graphiteTarget;
     this.throttler = Preconditions.checkNotNull(throttler, "throttler must not be null");
+    restoreServerReads = f -> throttler.restoreClientReads();
   }
 
   @Override
-  protected void channelRead0(final ChannelHandlerContext ctx, final String msg) throws Exception {
+  protected void channelRead0(final ChannelHandlerContext ctx, final String msg) {
     log.info("Got an unexpected downstream message: " + msg);
   }
 
   @Override
-  public void channelActive(final ChannelHandlerContext ctx) throws Exception {
+  public void channelActive(final ChannelHandlerContext ctx) {
     log.info("Connected to: {}", ctx.channel().remoteAddress());
   }
 
   @Override
-  public void channelUnregistered(final ChannelHandlerContext ctx) throws Exception {
+  public void channelUnregistered(final ChannelHandlerContext ctx) {
     log.warn("Got disconnected from {}... will try to reconnect in {} sec...", graphiteTarget, RECONNECT_DELAY_SEC);
     scheduleReconnect(ctx);
   }
 
   private void scheduleReconnect(final ChannelHandlerContext ctx) {
     final EventLoop loop = ctx.channel().eventLoop();
-    loop.schedule(new Runnable() {
-      @Override
-      public void run() {
-        log.info("Reconnecting to {}", graphiteTarget);
-        client.connect();
-      }
+    loop.schedule(() -> {
+      log.info("Reconnecting to {}", graphiteTarget);
+      client.connect();
     }, RECONNECT_DELAY_SEC, TimeUnit.SECONDS);
   }
 
   @Override
-  public void userEventTriggered(final ChannelHandlerContext ctx, final Object evt) throws Exception {
+  public void userEventTriggered(final ChannelHandlerContext ctx, final Object evt) {
     if (evt instanceof IdleStateEvent) {
       final IdleStateEvent e = (IdleStateEvent) evt;
       if (!serverReadEnabled && e.state() == IdleState.WRITER_IDLE) {
@@ -81,7 +67,7 @@ public class GraphiteChannelInboundHandler extends SimpleChannelInboundHandler<S
   }
 
   @Override
-  public void channelWritabilityChanged(final ChannelHandlerContext ctx) throws Exception {
+  public void channelWritabilityChanged(final ChannelHandlerContext ctx) {
     final boolean autoread = ctx.channel().isWritable();
     serverReadEnabled = autoread;
     if (!autoread) {
@@ -92,7 +78,7 @@ public class GraphiteChannelInboundHandler extends SimpleChannelInboundHandler<S
   }
 
   @Override
-  public void exceptionCaught(final ChannelHandlerContext ctx, final Throwable cause) throws Exception {
+  public void exceptionCaught(final ChannelHandlerContext ctx, final Throwable cause) {
     log.error("Unexpected exception from downstream.", cause);
     ctx.close();
   }
