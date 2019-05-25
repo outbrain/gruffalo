@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+
+  <property name="APPENDER" value="${GRUFFALO_LOG_APPENDER:-ConsoleLogstashAppender}" />
+
+  <appender name="ConsoleLogstashAppender" class="ch.qos.logback.core.ConsoleAppender">
+    <encoder class="net.logstash.logback.encoder.LogstashEncoder" >
+      <includeContext>false</includeContext>
+      <customFields>{"facility":"Gruffalo", "environment":"${GRUFFLAO_ENVIRONMENT:-DEV}", "hostName":"${HOSTNAME}"}</customFields>
+      <fieldNames>
+        <timestamp>timestamp</timestamp>
+        <version>[ignore]</version>
+        <levelValue>[ignore]</levelValue>
+      </fieldNames>
+      <shortenedLoggerNameLength>36</shortenedLoggerNameLength>
+    </encoder>
+  </appender>
+
+  <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+    <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+      <Pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</Pattern>
+    </encoder>
+  </appender>
+
+
+  <root level="info">
+    <appender-ref ref="${APPENDER}"/>
+  </root>
+</configuration>
