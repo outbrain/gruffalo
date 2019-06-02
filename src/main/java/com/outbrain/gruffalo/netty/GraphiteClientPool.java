@@ -1,7 +1,7 @@
 package com.outbrain.gruffalo.netty;
 
+import com.codahale.metrics.MetricRegistry;
 import com.outbrain.gruffalo.util.Preconditions;
-import com.outbrain.swinfra.metrics.api.MetricFactory;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.EventLoopGroup;
 import org.slf4j.Logger;
@@ -23,7 +23,7 @@ public class GraphiteClientPool implements GraphiteClient {
   public GraphiteClientPool(final EventLoopGroup eventLoopGroup,
                             final Throttler throttler,
                             final int inFlightBatchesHighThreshold,
-                            final MetricFactory metricFactory,
+                            final MetricRegistry metricRegistry,
                             final String graphiteRelayHosts) {
     Preconditions.checkNotNull(graphiteRelayHosts, "graphiteRelayHosts must not be null");
     Preconditions.checkNotNull(eventLoopGroup, "eventLoopGroup must not be null");
@@ -31,20 +31,20 @@ public class GraphiteClientPool implements GraphiteClient {
     logger.info("Creating a client pool for [{}]", graphiteRelayHosts);
     final String[] hosts = graphiteRelayHosts.trim().split(",");
     pool = new GraphiteClient[hosts.length];
-    initClients(hosts, eventLoopGroup, throttler, inFlightBatchesHighThreshold, metricFactory);
+    initClients(hosts, eventLoopGroup, throttler, inFlightBatchesHighThreshold, metricRegistry);
   }
 
   private void initClients(final String[] hosts,
                            final EventLoopGroup eventLoopGroup,
                            final Throttler throttler,
                            final int inFlightBatchesHighThreshold,
-                           final MetricFactory metricFactory) {
+                           final MetricRegistry metricRegistry) {
     for (int i = 0; i < hosts.length; i++) {
       final String[] hostAndPort = hosts[i].split(":");
       final String host = hostAndPort[0];
       final int port = Integer.parseInt(hostAndPort[1]);
 
-      final NettyGraphiteClient client = new NettyGraphiteClient(throttler, inFlightBatchesHighThreshold, metricFactory, hosts[i]);
+      final NettyGraphiteClient client = new NettyGraphiteClient(throttler, inFlightBatchesHighThreshold, metricRegistry, hosts[i]);
       pool[i] = client;
       final ChannelHandler graphiteChannelHandler = new GraphiteChannelInboundHandler(client, hosts[i], throttler);
       final GraphiteClientChannelInitializer channelInitializer = new GraphiteClientChannelInitializer(host, port, eventLoopGroup, graphiteChannelHandler);

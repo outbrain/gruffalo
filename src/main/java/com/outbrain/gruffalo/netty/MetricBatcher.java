@@ -1,9 +1,7 @@
 package com.outbrain.gruffalo.netty;
 
+import com.codahale.metrics.*;
 import com.outbrain.gruffalo.util.Preconditions;
-import com.outbrain.swinfra.metrics.api.Counter;
-import com.outbrain.swinfra.metrics.api.Histogram;
-import com.outbrain.swinfra.metrics.api.MetricFactory;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.group.ChannelGroup;
@@ -17,40 +15,42 @@ import java.net.SocketAddress;
 import java.time.Instant;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.codahale.metrics.MetricRegistry.name;
+
 public class MetricBatcher extends SimpleChannelInboundHandler<String> {
 
   private static final Logger log = LoggerFactory.getLogger(MetricBatcher.class);
   private static final AtomicInteger lastBatchSize = new AtomicInteger(0);
   private final int batchBufferCapacity;
-  private final Counter connectionCounter;
-  private final Counter metricsCounter;
-  private final Counter unexpectedErrorCounter;
-  private final Counter ioErrorCounter;
-  private final Counter idleChannelsClosed;
-  private final ChannelGroup activeChannels;
+  private final Counter connections;
+  private final Meter metricsReceived;
+  private final Meter unexpectedErrors;
+  private final Meter ioErrors;
+  private final Meter idleChannelsClosed;
   private final Histogram metricSize;
+  private final ChannelGroup activeChannels;
   private final int maxChannelIdleTime;
   private StringBuilder batch;
   private int currBatchSize;
   private Instant lastRead = Instant.now();
 
-  public MetricBatcher(final MetricFactory metricFactory, final int batchBufferCapacity, final ChannelGroup activeChannels, final int maxChannelIdleTime) {
+  public MetricBatcher(final MetricRegistry metricRegistry, final int batchBufferCapacity, final ChannelGroup activeChannels, final int maxChannelIdleTime) {
     Preconditions.checkArgument(maxChannelIdleTime > 0, "maxChannelIdleTime must be greater than 0");
     this.maxChannelIdleTime = maxChannelIdleTime;
-    Preconditions.checkNotNull(metricFactory, "metricFactory may not be null");
+    Preconditions.checkNotNull(metricRegistry, "metricRegistry may not be null");
     this.batchBufferCapacity = batchBufferCapacity;
     this.activeChannels = Preconditions.checkNotNull(activeChannels, "activeChannels must not be null");
     prepareNewBatch();
 
     final String component = getClass().getSimpleName();
-    connectionCounter = metricFactory.createCounter(component, "connections");
-    metricsCounter = metricFactory.createCounter(component, "metricsReceived");
-    unexpectedErrorCounter = metricFactory.createCounter(component, "unexpectedErrors");
-    ioErrorCounter = metricFactory.createCounter(component, "ioErrors");
-    idleChannelsClosed = metricFactory.createCounter(component, "idleChannelsClosed");
-    metricSize = metricFactory.createHistogram(component, "metricSize", false);
+    connections = metricRegistry.counter(name(component, "connections"));
+    metricsReceived = metricRegistry.meter(name(component, "metricsReceived"));
+    unexpectedErrors = metricRegistry.meter(name(component, "unexpectedErrors"));
+    ioErrors = metricRegistry.meter(name(component, "ioErrors"));
+    idleChannelsClosed = metricRegistry.meter(name(component, "idleChannelsClosed"));
+    metricSize = metricRegistry.histogram(name(component, "metricSize"));
     try {
-      metricFactory.registerGauge(component, "batchSize", lastBatchSize::get);
+      metricRegistry.register(name(component, "batchSize"), (Gauge<Integer>)lastBatchSize::get);
     } catch (IllegalArgumentException e) {
       // ignore metric already exists
     }
@@ -65,7 +65,7 @@ public class MetricBatcher extends SimpleChannelInboundHandler<String> {
     }
 
     batch.append(msg);
-    metricsCounter.inc();
+    metricsReceived.mark();
     metricSize.update(msg.length());
   }
 
@@ -93,7 +93,7 @@ public class MetricBatcher extends SimpleChannelInboundHandler<String> {
         if (remoteAddress != null) {
           if (lastRead.plusSeconds(maxChannelIdleTime).isBefore(Instant.now())) {
             log.warn("Closing suspected leaked connection: {}", remoteAddress);
-            idleChannelsClosed.inc();
+            idleChannelsClosed.mark();
             ctx.close();
             lastRead = Instant.now();
           }
@@ -105,14 +105,14 @@ public class MetricBatcher extends SimpleChannelInboundHandler<String> {
   @Override
   public void channelRegistered(final ChannelHandlerContext ctx) {
     if (ctx.channel().remoteAddress() != null) {
-      connectionCounter.inc();
+      connections.inc();
       activeChannels.add(ctx.channel());
     }
   }
 
   @Override
   public void channelUnregistered(final ChannelHandlerContext ctx) {
-    connectionCounter.dec();
+    connections.dec();
     try {
       sendBatch(ctx);
     } catch (final RuntimeException e) {
@@ -123,10 +123,10 @@ public class MetricBatcher extends SimpleChannelInboundHandler<String> {
   @Override
   public void exceptionCaught(final ChannelHandlerContext ctx, final Throwable cause) {
     if (cause instanceof IOException) {
-      ioErrorCounter.inc();
+      ioErrors.mark();
       log.error("IOException while handling metrics. Remote host =" + ctx.channel().remoteAddress(), cause);
     } else {
-      unexpectedErrorCounter.inc();
+      unexpectedErrors.mark();
       log.error("Unexpected exception while handling metrics. Remote host =" + ctx.channel().remoteAddress(), cause);
     }
     ctx.close();

@@ -1,8 +1,8 @@
 package com.outbrain.gruffalo.publish;
 
 
-import com.outbrain.swinfra.metrics.api.MetricFactory;
-import com.outbrain.swinfra.metrics.api.Timer;
+import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.Timer;
 
 /**
  * A thin layer on top of a {@link com.outbrain.gruffalo.publish.MetricsPublisher} adding timing aspect
@@ -14,9 +14,9 @@ public class TimedMetricsPublisher implements MetricsPublisher {
   private final MetricsPublisher timedDelegate;
   private final Timer timer;
 
-  public TimedMetricsPublisher(final MetricsPublisher timedDelegate, final MetricFactory metricFactory, final String publisherName) {
+  public TimedMetricsPublisher(final MetricsPublisher timedDelegate, final MetricRegistry metricRegistry, final String publisherName) {
     this.timedDelegate = timedDelegate;
-    timer = metricFactory.createTimer(timedDelegate.getClass().getSimpleName(), publisherName);
+    timer = metricRegistry.timer(MetricRegistry.name(timedDelegate.getClass().getSimpleName(), publisherName));
   }
 
   @Override

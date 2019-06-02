@@ -1,16 +1,19 @@
 package com.outbrain.gruffalo.netty;
 
 
+import com.codahale.metrics.Gauge;
+import com.codahale.metrics.Meter;
+import com.codahale.metrics.MetricRegistry;
 import com.outbrain.gruffalo.util.HostName2MetricName;
 import com.outbrain.gruffalo.util.Preconditions;
-import com.outbrain.swinfra.metrics.api.Counter;
-import com.outbrain.swinfra.metrics.api.MetricFactory;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.atomic.AtomicInteger;
+
+import static com.codahale.metrics.MetricRegistry.name;
 
 /**
  * Time: 8/4/13 12:30 PM
@@ -25,30 +28,31 @@ public class NettyGraphiteClient implements GraphiteClient {
   private final int inFlightBatchesHighThreshold;
   private final Throttler throttler;
   private final AtomicInteger inFlightBatches = new AtomicInteger(0);
-  private final Counter errorCounter;
-  private final Counter pushBackCounter;
-  private final Counter reconnectCounter;
-  private final Counter rejectedCounter;
-  private final Counter publishedCounter;
+  private final Meter errorCounter;
+  private final Meter pushBackCounter;
+  private final Meter reconnectCounter;
+  private final Meter rejectedCounter;
+  private final Meter publishedCounter;
   private final String host;
   private final ChannelFutureListener opListener = this::onMetricsWriteComplete;
   private GraphiteClientChannelInitializer channelInitializer;
   private volatile ChannelFuture channelFuture;
 
-  public NettyGraphiteClient(final Throttler throttler, final int inFlightBatchesHighThreshold, final MetricFactory metricFactory, final String host) {
+  public NettyGraphiteClient(final Throttler throttler, final int inFlightBatchesHighThreshold, final MetricRegistry metricRegistry, final String host) {
     Preconditions.checkArgument(0 < inFlightBatchesHighThreshold, "inFlightBatchesHighThreshold must be greater than 0");
     this.inFlightBatchesHighThreshold = inFlightBatchesHighThreshold;
     this.inFlightBatchesLowThreshold = inFlightBatchesHighThreshold / 5;
-    Preconditions.checkNotNull(metricFactory, "metricFactory must not be null");
+    Preconditions.checkNotNull(metricRegistry, "metricRegistry must not be null");
     this.throttler = Preconditions.checkNotNull(throttler, "throttler must not be null");
     this.host = host;
     final String graphiteCompatibleHostName = HostName2MetricName.graphiteCompatibleHostPortName(host);
-    errorCounter = metricFactory.createCounter(getClass().getSimpleName(), graphiteCompatibleHostName + ".errors");
-    pushBackCounter = metricFactory.createCounter(getClass().getSimpleName(), graphiteCompatibleHostName + ".pushBack");
-    reconnectCounter = metricFactory.createCounter(getClass().getSimpleName(), graphiteCompatibleHostName + ".reconnect");
-    rejectedCounter = metricFactory.createCounter(getClass().getSimpleName(), graphiteCompatibleHostName + ".rejected");
-    publishedCounter = metricFactory.createCounter(getClass().getSimpleName(), graphiteCompatibleHostName + ".published");
-    metricFactory.registerGauge(getClass().getSimpleName(), graphiteCompatibleHostName + ".inFlightBatches", inFlightBatches::get);
+    String component = getClass().getSimpleName();
+    errorCounter = metricRegistry.meter(name(component, graphiteCompatibleHostName + ".errors"));
+    pushBackCounter = metricRegistry.meter(name(component, graphiteCompatibleHostName + ".pushBack"));
+    reconnectCounter = metricRegistry.meter(name(component, graphiteCompatibleHostName + ".reconnect"));
+    rejectedCounter = metricRegistry.meter(name(component, graphiteCompatibleHostName + ".rejected"));
+    publishedCounter = metricRegistry.meter(name(component, graphiteCompatibleHostName + ".published"));
+    metricRegistry.register(name(component, graphiteCompatibleHostName + ".inFlightBatches"), (Gauge<Integer>) inFlightBatches::get);
     log.info("Client for [{}] initialized", host);
   }
 
@@ -58,7 +62,7 @@ public class NettyGraphiteClient implements GraphiteClient {
 
   @Override
   public void connect() {
-    reconnectCounter.inc();
+    reconnectCounter.mark();
     log.info("Client for [{}] is reconnecting", host);
     channelFuture = channelInitializer.connect();
   }
@@ -74,26 +78,26 @@ public class NettyGraphiteClient implements GraphiteClient {
       channelFuture.channel().writeAndFlush(metrics).addListener(opListener);
       return true;
     } else {
-      rejectedCounter.inc();
+      rejectedCounter.mark();
       return false;
     }
   }
 
   @Override
   public void onPushBack() {
-    pushBackCounter.inc();
+    pushBackCounter.mark();
   }
 
   private void onMetricsWriteComplete(final ChannelFuture future) {
-    final int inFlightBaches = inFlightBatches.decrementAndGet();
-    if(inFlightBaches == inFlightBatchesLowThreshold) {
+    final int currInFlightBatches = this.inFlightBatches.decrementAndGet();
+    if(currInFlightBatches == inFlightBatchesLowThreshold) {
       throttler.restoreClientReads();
     }
 
     if (future.isSuccess()) {
-      publishedCounter.inc();
+      publishedCounter.mark();
     } else {
-      errorCounter.inc();
+      errorCounter.mark();
       if (log.isDebugEnabled()) {
         log.debug("Failed to write to {}: {}", host, future.cause().toString());
       }

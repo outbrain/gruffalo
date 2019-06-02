@@ -73,27 +73,15 @@
   <dependencies>
 
     <dependency>
-      <groupId>com.outbrain.swinfra</groupId>
-      <artifactId>util-metrics</artifactId>
-      <version>0.122</version>
-    </dependency>
-
-    <dependency>
-      <groupId>com.outbrain.swinfra</groupId>
-      <artifactId>util-config</artifactId>
-      <version>0.122</version>
-    </dependency>
-
-    <dependency>
       <groupId>io.netty</groupId>
       <artifactId>netty-all</artifactId>
       <version>4.1.36.Final</version>
     </dependency>
 
     <dependency>
-      <groupId>com.codahale.metrics</groupId>
+      <groupId>io.dropwizard.metrics</groupId>
       <artifactId>metrics-core</artifactId>
-      <version>3.0.2</version>
+      <version>4.1.0</version>
     </dependency>
 
     <dependency>

@@ -5,8 +5,6 @@ import com.outbrain.gruffalo.netty.GraphiteChannelInboundHandler;
 import com.outbrain.gruffalo.netty.GraphiteClientChannelInitializer;
 import com.outbrain.gruffalo.netty.NettyGraphiteClient;
 import com.outbrain.gruffalo.netty.Throttler;
-import com.outbrain.swinfra.metrics.api.MetricFactory;
-import com.outbrain.swinfra.metrics.codahale3.CodahaleMetricsFactory;
 import io.netty.channel.group.DefaultChannelGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.util.concurrent.GlobalEventExecutor;
@@ -23,11 +21,11 @@ public class GraphiteMetricsPublisherTest {
 
   public static void main(String[] args) throws InterruptedException {
 
-    final MetricFactory metricFactory = new CodahaleMetricsFactory(new MetricRegistry());
+    final MetricRegistry metricRegistry = new MetricRegistry();
 
     NioEventLoopGroup eventLoopGroup = new NioEventLoopGroup(2);
-    final Throttler throttler = new Throttler(new DefaultChannelGroup(GlobalEventExecutor.INSTANCE), metricFactory);
-    NettyGraphiteClient client = new NettyGraphiteClient(throttler, 1000, metricFactory, "localhost:666");
+    final Throttler throttler = new Throttler(new DefaultChannelGroup(GlobalEventExecutor.INSTANCE), metricRegistry);
+    NettyGraphiteClient client = new NettyGraphiteClient(throttler, 1000, metricRegistry, "localhost:666");
     String host = "localhost";
     int port = 3003;
     GraphiteClientChannelInitializer channelInitializer = new GraphiteClientChannelInitializer(host, port, eventLoopGroup, new GraphiteChannelInboundHandler(client, host + ":" + port, throttler));

@@ -1,12 +1,15 @@
 package com.outbrain.gruffalo.netty;
 
 
+import com.codahale.metrics.Gauge;
+import com.codahale.metrics.MetricRegistry;
 import com.outbrain.gruffalo.util.Preconditions;
-import com.outbrain.swinfra.metrics.api.MetricFactory;
 import io.netty.channel.Channel;
 import io.netty.channel.group.ChannelGroup;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import static com.codahale.metrics.MetricRegistry.name;
 
 /**
  * This little fella is in charge of pushing back / restoring inbound traffic when needed
@@ -20,11 +23,11 @@ public class Throttler {
   private final ChannelGroup activeServerChannels;
   private Channel serverChannel;
 
-  public Throttler(final ChannelGroup activeServerChannels, MetricFactory metricFactory) {
+  public Throttler(final ChannelGroup activeServerChannels, MetricRegistry metricRegistry) {
     this.activeServerChannels = Preconditions.checkNotNull(activeServerChannels, "activeServerChannels must not be null");
-    Preconditions.checkNotNull(metricFactory, "metricFactory must not be null");
-    metricFactory.registerGauge(getClass().getSimpleName(), "autoread",
-        () -> serverChannel == null || !serverChannel.config().isAutoRead() ? 0 : 1);
+    Preconditions.checkNotNull(metricRegistry, "metricFactory must not be null");
+    metricRegistry.register(name(getClass().getSimpleName(), "autoread"),
+        (Gauge<Integer>) () -> serverChannel == null || !serverChannel.config().isAutoRead() ? 0 : 1);
   }
 
   void pushBackClients() {
