@@ -4,6 +4,7 @@ package com.outbrain.gruffalo.netty;
 import com.codahale.metrics.Gauge;
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.Timer;
 import com.outbrain.gruffalo.util.HostName2MetricName;
 import com.outbrain.gruffalo.util.Preconditions;
 import io.netty.channel.ChannelFuture;
@@ -11,6 +12,7 @@ import io.netty.channel.ChannelFutureListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.codahale.metrics.MetricRegistry.name;
@@ -33,8 +35,8 @@ public class NettyGraphiteClient implements GraphiteClient {
   private final Meter reconnectCounter;
   private final Meter rejectedCounter;
   private final Meter publishedCounter;
+  private final Timer publishTime;
   private final String host;
-  private final ChannelFutureListener opListener = this::onMetricsWriteComplete;
   private GraphiteClientChannelInitializer channelInitializer;
   private volatile ChannelFuture channelFuture;
 
@@ -47,12 +49,13 @@ public class NettyGraphiteClient implements GraphiteClient {
     this.host = host;
     final String graphiteCompatibleHostName = HostName2MetricName.graphiteCompatibleHostPortName(host);
     String component = getClass().getSimpleName();
-    errorCounter = metricRegistry.meter(name(component, graphiteCompatibleHostName + ".errors"));
-    pushBackCounter = metricRegistry.meter(name(component, graphiteCompatibleHostName + ".pushBack"));
-    reconnectCounter = metricRegistry.meter(name(component, graphiteCompatibleHostName + ".reconnect"));
-    rejectedCounter = metricRegistry.meter(name(component, graphiteCompatibleHostName + ".rejected"));
-    publishedCounter = metricRegistry.meter(name(component, graphiteCompatibleHostName + ".published"));
-    metricRegistry.register(name(component, graphiteCompatibleHostName + ".inFlightBatches"), (Gauge<Integer>) inFlightBatches::get);
+    errorCounter = metricRegistry.meter(name(component, graphiteCompatibleHostName + "errors"));
+    pushBackCounter = metricRegistry.meter(name(component, graphiteCompatibleHostName + "pushBack"));
+    reconnectCounter = metricRegistry.meter(name(component, graphiteCompatibleHostName + "reconnect"));
+    rejectedCounter = metricRegistry.meter(name(component, graphiteCompatibleHostName + "rejected"));
+    publishedCounter = metricRegistry.meter(name(component, graphiteCompatibleHostName + "published"));
+    publishTime = metricRegistry.timer(name(component, graphiteCompatibleHostName, "publishTime"));
+    metricRegistry.register(name(component, graphiteCompatibleHostName + "inFlightBatches"), (Gauge<Integer>) inFlightBatches::get);
     log.info("Client for [{}] initialized", host);
   }
 
@@ -75,7 +78,8 @@ public class NettyGraphiteClient implements GraphiteClient {
         onPushBack();
         throttler.pushBackClients();
       }
-      channelFuture.channel().writeAndFlush(metrics).addListener(opListener);
+
+      channelFuture.channel().writeAndFlush(metrics).addListener(createPublishMetricFutureListener(System.nanoTime()));
       return true;
     } else {
       rejectedCounter.mark();
@@ -83,24 +87,29 @@ public class NettyGraphiteClient implements GraphiteClient {
     }
   }
 
+  private ChannelFutureListener createPublishMetricFutureListener(long startTime) {
+    return future -> {
+      final long elapsed = System.nanoTime() - startTime;
+      publishTime.update(elapsed, TimeUnit.NANOSECONDS);
+
+      final int currInFlightBatches = this.inFlightBatches.decrementAndGet();
+      if(currInFlightBatches == inFlightBatchesLowThreshold) {
+        throttler.restoreClientReads();
+      }
+
+      if (future.isSuccess()) {
+        publishedCounter.mark();
+      } else {
+        errorCounter.mark();
+        if (log.isDebugEnabled()) {
+          log.debug("Failed to write to {}: {}", host, future.cause().toString());
+        }
+      }
+    };
+  }
+
   @Override
   public void onPushBack() {
     pushBackCounter.mark();
-  }
-
-  private void onMetricsWriteComplete(final ChannelFuture future) {
-    final int currInFlightBatches = this.inFlightBatches.decrementAndGet();
-    if(currInFlightBatches == inFlightBatchesLowThreshold) {
-      throttler.restoreClientReads();
-    }
-
-    if (future.isSuccess()) {
-      publishedCounter.mark();
-    } else {
-      errorCounter.mark();
-      if (log.isDebugEnabled()) {
-        log.debug("Failed to write to {}: {}", host, future.cause().toString());
-      }
-    }
   }
 }

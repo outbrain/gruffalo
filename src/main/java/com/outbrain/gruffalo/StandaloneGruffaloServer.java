@@ -8,7 +8,6 @@ import com.outbrain.gruffalo.netty.*;
 import com.outbrain.gruffalo.publish.CompoundMetricsPublisher;
 import com.outbrain.gruffalo.publish.GraphiteMetricsPublisher;
 import com.outbrain.gruffalo.publish.MetricsPublisher;
-import com.outbrain.gruffalo.publish.TimedMetricsPublisher;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.group.DefaultChannelGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
@@ -79,12 +78,11 @@ public class StandaloneGruffaloServer {
 
   private MetricsPublisher createMetricsPublisher(final EventLoopGroup eventLoopGroup, final Throttler throttler, final MetricRegistry metricRegistry, final String[] clusters) {
     final List<MetricsPublisher> publishers = new ArrayList<>(clusters.length);
-    for (int i = 0; i < clusters.length; i++) {
-      GraphiteClientPool graphiteClient = new GraphiteClientPool(eventLoopGroup, throttler, config.maxInflightBatches, metricRegistry, clusters[i]);
+    for (String cluster : clusters) {
+      GraphiteClientPool graphiteClient = new GraphiteClientPool(eventLoopGroup, throttler, config.maxInflightBatches, metricRegistry, cluster);
       graphiteClient.connect();
 
-      final MetricsPublisher clutserPublisher = new GraphiteMetricsPublisher(graphiteClient);
-      publishers.add(new TimedMetricsPublisher(clutserPublisher, metricRegistry, "graphiteCluster-" + i));
+      publishers.add(new GraphiteMetricsPublisher(graphiteClient));
     }
 
     return new CompoundMetricsPublisher(publishers);
