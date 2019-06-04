@@ -29,6 +29,16 @@ public class GruffaloProxy {
     log.info("Initialization completed");
   }
 
+  public void withShutdownHook() {
+    Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+      try {
+        shutdown();
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+      }
+    }));
+  }
+
   private ChannelFuture createTcpBootstrap(final TcpServerPipelineFactory tcpServerPipelineFactory, final int tcpPort) {
     log.info("Initializing TCP...");
     ServerBootstrap tcpBootstrap = new ServerBootstrap();

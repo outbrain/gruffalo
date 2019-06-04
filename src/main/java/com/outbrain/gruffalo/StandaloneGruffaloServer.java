@@ -1,6 +1,8 @@
 package com.outbrain.gruffalo;
 
 import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.jmx.JmxReporter;
+import com.codahale.metrics.jvm.*;
 import com.outbrain.gruffalo.config.Config;
 import com.outbrain.gruffalo.netty.*;
 import com.outbrain.gruffalo.publish.CompoundMetricsPublisher;
@@ -15,6 +17,7 @@ import io.netty.util.concurrent.GlobalEventExecutor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.lang.management.ManagementFactory;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -34,10 +37,11 @@ public class StandaloneGruffaloServer {
 
   private StandaloneGruffaloServer(final Config config) {
     this.config = config;
+    setupMetricsReporters();
     MetricsPublisher metricsPublisher = createMetricsPublisher(eventLoopGroup, throttler, metricRegistry, config.graphiteClusters);
     TcpServerPipelineFactory tcpServerPipelineFactory = createTcpServerPipelineFactory(metricsPublisher);
 
-    GruffaloProxy proxy = createProxy(config.port, tcpServerPipelineFactory);
+    createProxy(config.port, tcpServerPipelineFactory).withShutdownHook();
   }
 
   public static void main(final String[] args) {
@@ -50,17 +54,18 @@ public class StandaloneGruffaloServer {
     logger.info("******** Gruffalo started ********");
   }
 
-  private GruffaloProxy createProxy(final int tcpPort, final TcpServerPipelineFactory tcpServerPipelineFactory) {
-    GruffaloProxy proxy = new GruffaloProxy(eventLoopGroup, tcpServerPipelineFactory, tcpPort, throttler);
-    Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-      try {
-        proxy.shutdown();
-      } catch (InterruptedException e) {
-        Thread.currentThread().interrupt();
-      }
-    }));
+  private void setupMetricsReporters() {
+    metricRegistry.register("jvm.memory", new MemoryUsageGaugeSet());
+    metricRegistry.register("jvm.gc", new GarbageCollectorMetricSet());
+    metricRegistry.register("jvm.threads", new ThreadStatesGaugeSet());
+    metricRegistry.register("jvm.files", new FileDescriptorRatioGauge());
+    metricRegistry.register("jvm.memoryPools", new BufferPoolMetricSet(ManagementFactory.getPlatformMBeanServer()));
 
-    return proxy;
+    JmxReporter.forRegistry(metricRegistry).build().start();
+  }
+
+  private GruffaloProxy createProxy(final int tcpPort, final TcpServerPipelineFactory tcpServerPipelineFactory) {
+    return new GruffaloProxy(eventLoopGroup, tcpServerPipelineFactory, tcpPort, throttler);
   }
 
   private TcpServerPipelineFactory createTcpServerPipelineFactory(final MetricsPublisher metricsPublisher) {
