@@ -3,16 +3,11 @@ package com.outbrain.gruffalo.netty;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
-import io.netty.handler.codec.string.StringDecoder;
 import io.netty.handler.timeout.IdleStateHandler;
-import io.netty.util.CharsetUtil;
-import io.netty.util.concurrent.EventExecutorGroup;
 
 import java.util.Objects;
 
 public class TcpServerPipelineFactory extends ChannelInitializer<Channel> {
-
-  private static final StringDecoder decoder = new StringDecoder(CharsetUtil.UTF_8);
 
   private final int readerIdleTimeSeconds;
   private final LineBasedFrameDecoderFactory framerFactory;
@@ -38,7 +33,6 @@ public class TcpServerPipelineFactory extends ChannelInitializer<Channel> {
     final ChannelPipeline pipeline = channel.pipeline();
     pipeline.addLast("idleStateHandler", new IdleStateHandler(readerIdleTimeSeconds, 0, 0));
     pipeline.addLast("framer", framerFactory.getLineFramer());
-    pipeline.addLast("decoder", decoder);
     pipeline.addLast("batchHandler", metricBatcherFactory.getMetricBatcher());
     pipeline.addLast("publishHandler", publishHandler);
   }

@@ -2,6 +2,7 @@ package com.outbrain.gruffalo.netty;
 
 import com.codahale.metrics.MetricRegistry;
 import com.outbrain.gruffalo.util.Preconditions;
+import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.EventLoopGroup;
 import org.slf4j.Logger;
@@ -60,7 +61,7 @@ public class GraphiteClientPool implements GraphiteClient {
   }
 
   @Override
-  public boolean publishMetrics(final String metrics) {
+  public boolean publishMetrics(final ByteBuf metrics) {
     final int currIndex = nextIndex.getAndIncrement();
 
     for(int i = 0; i < pool.length; i++) {

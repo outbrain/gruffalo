@@ -2,6 +2,8 @@ package com.outbrain.gruffalo.netty;
 
 import com.codahale.metrics.*;
 import com.outbrain.gruffalo.util.Preconditions;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.group.ChannelGroup;
@@ -13,14 +15,17 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.net.SocketAddress;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.codahale.metrics.MetricRegistry.name;
 
-public class MetricBatcher extends SimpleChannelInboundHandler<String> {
+public class MetricBatcher extends SimpleChannelInboundHandler<ByteBuf> {
 
   private static final Logger log = LoggerFactory.getLogger(MetricBatcher.class);
   private static final AtomicInteger lastBatchSize = new AtomicInteger(0);
+  private static final ByteBuf[] EMPTY_BUFFS_ARR = new ByteBuf[0];
   private final int batchBufferCapacity;
   private final Counter connections;
   private final Meter metricsReceived;
@@ -30,11 +35,12 @@ public class MetricBatcher extends SimpleChannelInboundHandler<String> {
   private final Histogram metricSize;
   private final ChannelGroup activeChannels;
   private final int maxChannelIdleTime;
-  private StringBuilder batch;
-  private int currBatchSize;
+  private final List<ByteBuf> batch = new ArrayList<>(128);
+  private int currentBatchLength;
   private Instant lastRead = Instant.now();
 
   public MetricBatcher(final MetricRegistry metricRegistry, final int batchBufferCapacity, final ChannelGroup activeChannels, final int maxChannelIdleTime) {
+    super(false);
     Preconditions.checkArgument(maxChannelIdleTime > 0, "maxChannelIdleTime must be greater than 0");
     this.maxChannelIdleTime = maxChannelIdleTime;
     Preconditions.checkNotNull(metricRegistry, "metricRegistry may not be null");
@@ -57,29 +63,30 @@ public class MetricBatcher extends SimpleChannelInboundHandler<String> {
   }
 
   @Override
-  public void channelRead0(final ChannelHandlerContext ctx, final String msg) {
+  public void channelRead0(final ChannelHandlerContext ctx, final ByteBuf msg) {
     lastRead = Instant.now();
-    currBatchSize++;
-    if (batch.capacity() < batch.length() + msg.length()) {
+    int metricLength = msg.capacity();
+    if (batchBufferCapacity < currentBatchLength + metricLength) {
       sendBatch(ctx);
     }
 
-    batch.append(msg);
+    currentBatchLength += metricLength;
+    batch.add(msg);
     metricsReceived.mark();
-    metricSize.update(msg.length());
+    metricSize.update(metricLength);
   }
 
   private void sendBatch(final ChannelHandlerContext ctx) {
-    if (0 < batch.length()) {
-      ctx.fireChannelRead(new Batch(batch, currBatchSize));
+    if (0 < batch.size()) {
+      final ByteBuf batchBuf = Unpooled.wrappedBuffer(batch.toArray(EMPTY_BUFFS_ARR));
+      ctx.fireChannelRead(new Batch(batchBuf, batch.size()));
       prepareNewBatch();
     }
   }
 
   private void prepareNewBatch() {
-    batch = new StringBuilder(batchBufferCapacity);
-    lastBatchSize.set(currBatchSize);
-    currBatchSize = 0;
+    lastBatchSize.set(batch.size());
+    batch.clear();
   }
 
   @Override
