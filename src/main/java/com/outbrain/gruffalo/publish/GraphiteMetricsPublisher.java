@@ -3,6 +3,7 @@ package com.outbrain.gruffalo.publish;
 
 import com.outbrain.gruffalo.netty.GraphiteClient;
 import com.outbrain.gruffalo.util.Preconditions;
+import io.netty.buffer.ByteBuf;
 
 /**
  * Time: 7/28/13 3:16 PM
@@ -18,7 +19,7 @@ public class GraphiteMetricsPublisher implements MetricsPublisher {
   }
 
   @Override
-  public void publishMetrics(final String metrics) {
+  public void publishMetrics(final ByteBuf metrics) {
     graphiteClient.publishMetrics(metrics);
   }
 

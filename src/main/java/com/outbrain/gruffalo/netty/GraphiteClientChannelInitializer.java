@@ -1,7 +1,6 @@
 package com.outbrain.gruffalo.netty;
 
 
-
 import com.outbrain.gruffalo.util.Preconditions;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.UnpooledByteBufAllocator;
@@ -13,10 +12,7 @@ import io.netty.channel.ChannelOption;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
-import io.netty.handler.codec.string.StringDecoder;
-import io.netty.handler.codec.string.StringEncoder;
 import io.netty.handler.timeout.IdleStateHandler;
-import io.netty.util.CharsetUtil;
 
 /**
 * Time: 8/4/13 10:06 AM
@@ -25,13 +21,10 @@ import io.netty.util.CharsetUtil;
 */
 public class GraphiteClientChannelInitializer extends ChannelInitializer<Channel> {
 
-  private static final StringDecoder decoder = new StringDecoder(CharsetUtil.UTF_8);
-  private static final StringEncoder encoder = new StringEncoder(CharsetUtil.UTF_8);
-
   private final String graphiteHost;
   private final int graphitePort;
   private final EventLoopGroup eventLoopGroup;
-  private ChannelHandler graphiteHandler;
+  private final ChannelHandler graphiteHandler;
 
   public GraphiteClientChannelInitializer(final String graphiteHost,
                                           final int graphitePort,
@@ -64,8 +57,6 @@ public class GraphiteClientChannelInitializer extends ChannelInitializer<Channel
     ChannelPipeline pipeline = channel.pipeline();
 
     pipeline.addLast(new IdleStateHandler(0, 10, 0));
-    pipeline.addLast("decoder", decoder);
-    pipeline.addLast("encoder", encoder); // we don't really read responses...
     pipeline.addLast("handler", graphiteHandler);
   }
 }

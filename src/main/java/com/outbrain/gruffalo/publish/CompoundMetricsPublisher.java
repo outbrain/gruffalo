@@ -1,5 +1,7 @@
 package com.outbrain.gruffalo.publish;
 
+import io.netty.buffer.ByteBuf;
+
 import java.util.LinkedList;
 import java.util.List;
 
@@ -10,14 +12,14 @@ import java.util.List;
  */
 public class CompoundMetricsPublisher implements MetricsPublisher {
 
-  private final List<MetricsPublisher> publishers = new LinkedList<MetricsPublisher>();
+  private final List<MetricsPublisher> publishers = new LinkedList<>();
 
   public CompoundMetricsPublisher(final List<MetricsPublisher> publishers) {
     this.publishers.addAll(publishers);
   }
 
   @Override
-  public void publishMetrics(final String payload) {
+  public void publishMetrics(final ByteBuf payload) {
     for (final MetricsPublisher publisher : publishers) {
       publisher.publishMetrics(payload);
     }

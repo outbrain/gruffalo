@@ -8,7 +8,7 @@ import java.util.regex.Pattern;
  * @author Eran Harel
  */
 public class HostName2MetricName {
-  private static final Pattern REPLACED_CHARS = Pattern.compile("[\\.\\:]");
+  private static final Pattern REPLACED_CHARS = Pattern.compile("[.:]");
 
   public static String graphiteCompatibleHostPortName(String hostAndPort) {
     return REPLACED_CHARS.matcher(hostAndPort).replaceAll("_");

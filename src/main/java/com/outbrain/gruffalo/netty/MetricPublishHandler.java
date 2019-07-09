@@ -27,7 +27,7 @@ public class MetricPublishHandler extends SimpleChannelInboundHandler<Batch> {
 
   @Override
   public void channelRead0(final ChannelHandlerContext ctx, final Batch msg) {
-    publisher.publishMetrics(msg.payload.toString());
+    publisher.publishMetrics(msg.payload);
     metricsSent.mark(msg.batchSize);
   }
 

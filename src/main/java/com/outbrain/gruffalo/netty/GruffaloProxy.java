@@ -15,6 +15,8 @@ import org.slf4j.LoggerFactory;
 public class GruffaloProxy {
 
   private static final Logger log = LoggerFactory.getLogger(GruffaloProxy.class);
+  private static final UnpooledByteBufAllocator ALLOCATOR = new UnpooledByteBufAllocator(true, true);
+
   private final ChannelFuture tcpChannelFuture;
   private final EventLoopGroup eventLoopGroup;
   private final Throttler throttler;
@@ -45,7 +47,7 @@ public class GruffaloProxy {
     tcpBootstrap.group(eventLoopGroup);
     tcpBootstrap.channel(NioServerSocketChannel.class);
     tcpBootstrap.childHandler(tcpServerPipelineFactory);
-    tcpBootstrap.option(ChannelOption.ALLOCATOR, UnpooledByteBufAllocator.DEFAULT);
+    tcpBootstrap.option(ChannelOption.ALLOCATOR, ALLOCATOR);
 
     final ChannelFuture channelFuture = tcpBootstrap.bind(tcpPort).addListener((ChannelFutureListener) future -> throttler.setServerChannel(future.channel()));
     log.info("Binding to TCP port {}", tcpPort);

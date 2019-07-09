@@ -7,6 +7,7 @@ import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import com.outbrain.gruffalo.util.HostName2MetricName;
 import com.outbrain.gruffalo.util.Preconditions;
+import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import org.slf4j.Logger;
@@ -71,7 +72,7 @@ public class NettyGraphiteClient implements GraphiteClient {
   }
 
   @Override
-  public boolean publishMetrics(final String metrics) {
+  public boolean publishMetrics(final ByteBuf metrics) {
     if (channelFuture.isDone()) {
       final int numInFlight = inFlightBatches.incrementAndGet();
       if(inFlightBatchesHighThreshold <= numInFlight) {
