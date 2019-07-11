@@ -1,5 +1,6 @@
 package com.outbrain.gruffalo;
 
+import com.google.common.eventbus.EventBus;
 import com.outbrain.gruffalo.config.Config;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
@@ -7,7 +8,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
-import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 /**
  * End To End test for the entire server stack.
@@ -18,10 +19,12 @@ class E2ETest {
   private static final int SERVER_PORT = 3003;
   private MockGraphite mockGraphite;
   private StandaloneGruffaloServer gruffaloServer;
+  private EventBus eventBus;
 
   @BeforeEach
   void setup() throws Exception {
-    mockGraphite = new MockGraphite();
+    eventBus = new EventBus();
+    mockGraphite = new MockGraphite(eventBus);
     Config config = Config.parseCommand(
         "test.gruffalo",
         new String[]{"-p", String.valueOf(SERVER_PORT), "-c", "localhost:" + mockGraphite.getPort(), "-maxBatchSize", "10"});
@@ -30,23 +33,23 @@ class E2ETest {
 
   @AfterEach
   void teardown() throws Exception {
+    eventBus = null;
     gruffaloServer.shutdown();
     mockGraphite.close();
   }
 
   @Test
   void testGruffaloProxy_singleMetric() throws Exception {
+    final ReceivedMetricsListener metricsListener = createListener(2);
     GraphiteClient client = new GraphiteClient(SERVER_PORT);
 
     String metric = "0-aaaaaaa";
     client.send(metric);
     client.send(metric);
-    client.send("xxx");
     client.close();
 
-    Thread.sleep(100);
-    Assertions.assertEquals(2, mockGraphite.getCount("0-aaaaaaa"));
-
+    metricsListener.await(1, TimeUnit.SECONDS);
+    Assertions.assertEquals(2, metricsListener.getCount("0-aaaaaaa"));
   }
 
   @Test
@@ -54,7 +57,8 @@ class E2ETest {
     final int numThreads = 4;
     final int numMetrics = 500;
     final String metricFormat = "metric-%d";
-    final CountDownLatch wg = new CountDownLatch(numThreads);
+
+    ReceivedMetricsListener metricsListener = createListener(numMetrics * numThreads);
 
     for (int i = 0; i < numThreads; i++) {
       new Thread(() -> {
@@ -64,30 +68,24 @@ class E2ETest {
             client.send(String.format(metricFormat, j));
           }
 
-          client.send("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"); // just make sure we send all batches we're interested in
           client.close();
         } catch (IOException e) {
           e.printStackTrace();
-        } finally {
-          wg.countDown();
         }
       }).start();
     }
 
-    wg.await();
-    Thread.sleep(100);
+    metricsListener.await(1, TimeUnit.SECONDS);
 
     for (int i = 0; i < numThreads; i++) {
-      Assertions.assertEquals(numThreads, mockGraphite.getCount(String.format(metricFormat, i)));
+      Assertions.assertEquals(numThreads, metricsListener.getCount(String.format(metricFormat, i)));
     }
   }
 
+  private ReceivedMetricsListener createListener(final int expectedCount) {
+    final ReceivedMetricsListener metricsListener = new ReceivedMetricsListener(expectedCount);
+    eventBus.register(metricsListener);
 
-//  private static class ClientThread implements Runnable {
-//
-//    @Override
-//    public void run() {
-//
-//    }
-//  }
+    return metricsListener;
+  }
 }
