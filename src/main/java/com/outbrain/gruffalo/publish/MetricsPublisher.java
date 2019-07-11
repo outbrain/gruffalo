@@ -4,5 +4,7 @@ import io.netty.buffer.ByteBuf;
 
 public interface MetricsPublisher {
 
-  public void publishMetrics(ByteBuf payload);
+  void publishMetrics(ByteBuf payload);
+
+  void close() throws InterruptedException;
 }

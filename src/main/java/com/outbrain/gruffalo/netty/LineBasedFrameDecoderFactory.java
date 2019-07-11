@@ -4,5 +4,5 @@ import io.netty.handler.codec.LineBasedFrameDecoder;
 
 public interface LineBasedFrameDecoderFactory {
 
-  public LineBasedFrameDecoder getLineFramer();
+  LineBasedFrameDecoder getLineFramer();
 }

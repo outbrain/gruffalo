@@ -23,4 +23,9 @@ public class GraphiteMetricsPublisher implements MetricsPublisher {
     graphiteClient.publishMetrics(metrics);
   }
 
+  @Override
+  public void close() throws InterruptedException {
+    graphiteClient.close();
+  }
+
 }

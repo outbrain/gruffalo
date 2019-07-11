@@ -2,9 +2,20 @@ package com.outbrain.gruffalo;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.jmx.JmxReporter;
-import com.codahale.metrics.jvm.*;
+import com.codahale.metrics.jvm.BufferPoolMetricSet;
+import com.codahale.metrics.jvm.FileDescriptorRatioGauge;
+import com.codahale.metrics.jvm.GarbageCollectorMetricSet;
+import com.codahale.metrics.jvm.MemoryUsageGaugeSet;
+import com.codahale.metrics.jvm.ThreadStatesGaugeSet;
 import com.outbrain.gruffalo.config.Config;
-import com.outbrain.gruffalo.netty.*;
+import com.outbrain.gruffalo.netty.GraphiteClientPool;
+import com.outbrain.gruffalo.netty.GruffaloProxy;
+import com.outbrain.gruffalo.netty.LineBasedFrameDecoderFactory;
+import com.outbrain.gruffalo.netty.MetricBatcher;
+import com.outbrain.gruffalo.netty.MetricBatcherFactory;
+import com.outbrain.gruffalo.netty.MetricPublishHandler;
+import com.outbrain.gruffalo.netty.TcpServerPipelineFactory;
+import com.outbrain.gruffalo.netty.Throttler;
 import com.outbrain.gruffalo.publish.CompoundMetricsPublisher;
 import com.outbrain.gruffalo.publish.GraphiteMetricsPublisher;
 import com.outbrain.gruffalo.publish.MetricsPublisher;
@@ -33,14 +44,17 @@ public class StandaloneGruffaloServer {
   private final DefaultChannelGroup activeServerChannels = new DefaultChannelGroup(GlobalEventExecutor.INSTANCE);
   private final Throttler throttler = new Throttler(activeServerChannels, new MetricRegistry());
   private final EventLoopGroup eventLoopGroup = createEventLoopGroup();
+  private final GruffaloProxy proxy;
+  private final MetricsPublisher metricsPublisher;
 
-  private StandaloneGruffaloServer(final Config config) {
+  StandaloneGruffaloServer(final Config config) {
     this.config = config;
     setupMetricsReporters();
-    MetricsPublisher metricsPublisher = createMetricsPublisher(eventLoopGroup, throttler, metricRegistry, config.graphiteClusters);
+    metricsPublisher = createMetricsPublisher(eventLoopGroup, throttler, metricRegistry, config.graphiteClusters);
     TcpServerPipelineFactory tcpServerPipelineFactory = createTcpServerPipelineFactory(metricsPublisher);
 
-    createProxy(config.port, tcpServerPipelineFactory).withShutdownHook();
+    proxy = createProxy(config.port, tcpServerPipelineFactory);
+    proxy.withShutdownHook();
   }
 
   public static void main(final String[] args) {
@@ -51,6 +65,11 @@ public class StandaloneGruffaloServer {
 
     new StandaloneGruffaloServer(config);
     logger.info("******** Gruffalo started ********");
+  }
+
+  public void shutdown() throws InterruptedException {
+    proxy.shutdown();
+    metricsPublisher.close();
   }
 
   private void setupMetricsReporters() {

@@ -72,6 +72,12 @@ public class NettyGraphiteClient implements GraphiteClient {
   }
 
   @Override
+  public void close() throws InterruptedException {
+    log.info("Closing client for [{}]... ", host);
+    channelFuture.channel().closeFuture().sync();
+  }
+
+  @Override
   public boolean publishMetrics(final ByteBuf metrics) {
     if (channelFuture.isDone()) {
       final int numInFlight = inFlightBatches.incrementAndGet();

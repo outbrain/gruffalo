@@ -24,4 +24,11 @@ public class CompoundMetricsPublisher implements MetricsPublisher {
       publisher.publishMetrics(payload);
     }
   }
+
+  @Override
+  public void close() throws InterruptedException {
+    for (MetricsPublisher publisher : publishers) {
+      publisher.close();
+    }
+  }
 }

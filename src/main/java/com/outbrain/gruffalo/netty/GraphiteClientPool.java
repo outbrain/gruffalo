@@ -61,6 +61,13 @@ public class GraphiteClientPool implements GraphiteClient {
   }
 
   @Override
+  public void close() throws InterruptedException {
+    for (GraphiteClient client : pool) {
+      client.close();
+    }
+  }
+
+  @Override
   public boolean publishMetrics(final ByteBuf metrics) {
     final int currIndex = nextIndex.getAndIncrement();
 
