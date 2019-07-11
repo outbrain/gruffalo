@@ -16,18 +16,20 @@ import java.util.concurrent.TimeUnit;
  */
 class E2ETest {
 
-  private static final int SERVER_PORT = 3003;
+  private static int serverPort = 3003;
+
   private MockGraphite mockGraphite;
   private StandaloneGruffaloServer gruffaloServer;
   private EventBus eventBus;
 
   @BeforeEach
   void setup() throws Exception {
+    serverPort++;
     eventBus = new EventBus();
     mockGraphite = new MockGraphite(eventBus);
     Config config = Config.parseCommand(
         "test.gruffalo",
-        new String[]{"-p", String.valueOf(SERVER_PORT), "-c", "localhost:" + mockGraphite.getPort(), "-maxBatchSize", "10"});
+        new String[]{"-p", String.valueOf(serverPort), "-c", "localhost:" + mockGraphite.getPort(), "-maxBatchSize", "10"});
     gruffaloServer = new StandaloneGruffaloServer(config);
   }
 
@@ -41,7 +43,7 @@ class E2ETest {
   @Test
   void testGruffaloProxy_singleMetric() throws Exception {
     final ReceivedMetricsListener metricsListener = createListener(2);
-    GraphiteClient client = new GraphiteClient(SERVER_PORT);
+    GraphiteClient client = new GraphiteClient(serverPort);
 
     String metric = "0-aaaaaaa";
     client.send(metric);
@@ -63,7 +65,7 @@ class E2ETest {
     for (int i = 0; i < numThreads; i++) {
       new Thread(() -> {
         try {
-          GraphiteClient client = new GraphiteClient(SERVER_PORT);
+          GraphiteClient client = new GraphiteClient(serverPort);
           for (int j = 0; j < numMetrics; j++) {
             client.send(String.format(metricFormat, j));
           }
