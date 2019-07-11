@@ -31,6 +31,7 @@ class E2ETest {
         "test.gruffalo",
         new String[]{"-p", String.valueOf(serverPort), "-c", "localhost:" + mockGraphite.getPort(), "-maxBatchSize", "10"});
     gruffaloServer = new StandaloneGruffaloServer(config);
+    Thread.sleep(200); // we should actually wait on the server channel future...
   }
 
   @AfterEach
