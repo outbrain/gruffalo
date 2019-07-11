@@ -1,6 +1,6 @@
 Gruffalo
 ========
-[![Build Status](https://travis-ci.org/outbrain/gruffalo.svg?branch=master)](https://travis-ci.org/outbrain/gruffalo)
+[![Build Status](https://travis-ci.org/eranharel/gruffalo.svg?branch=master)](https://travis-ci.org/eranharel/gruffalo)
 
 Gruffalo is an asynchronous Netty based graphite proxy.
 It protects Graphite from the herds of clients by minimizing context switches and interrupts; by batching and aggregating metrics.
