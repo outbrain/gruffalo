@@ -87,6 +87,7 @@ public class MetricBatcher extends SimpleChannelInboundHandler<ByteBuf> {
   private void prepareNewBatch() {
     lastBatchSize.set(batch.size());
     batch.clear();
+    currentBatchLength = 0;
   }
 
   @Override
