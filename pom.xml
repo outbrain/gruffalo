@@ -48,7 +48,7 @@
     <repository>
       <id>nexus-3rdparty</id>
       <name>3rd party repository</name>
-      <url>http://mavenrepo:8081/nexus/content/repositories/thirdparty</url>
+      <url>https://mavenrepo:8081/nexus/content/repositories/thirdparty</url>
     </repository>
     -->
     <!-- Temp Bintray repo
@@ -65,13 +65,13 @@
     <repository>
       <id>nexus</id>
       <name>Local nexus</name>
-      <url>http://nexus:8081/nexus/content/groups/public</url>
+      <url>https://nexus:8081/nexus/content/groups/public</url>
     </repository>
     -->
     <repository>
       <id>jcenter</id>
       <name>jcenter</name>
-      <url>http://jcenter.bintray.com</url>
+      <url>https://jcenter.bintray.com</url>
       <snapshots><enabled>false</enabled></snapshots>
     </repository>
   </repositories>
